@@ -11,6 +11,8 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import FamilyMemberForm from '@/components/FamilyMemberForm';
 import PhotoUpload from '@/components/PhotoUpload';
+import VoiceInputButton from '@/components/VoiceInputButton';
+import { parseOcrText } from '@/lib/ocrParser';
 import { toast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 
