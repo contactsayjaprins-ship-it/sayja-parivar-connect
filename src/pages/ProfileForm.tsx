@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { useAppStore, FamilyProfile } from '@/lib/store';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { useAppStore, FamilyProfile, FamilyMember } from '@/lib/store';
 import { saveProfile } from '@/lib/api';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,9 +12,9 @@ import Footer from '@/components/Footer';
 import FamilyMemberForm from '@/components/FamilyMemberForm';
 import PhotoUpload from '@/components/PhotoUpload';
 import VoiceInputButton from '@/components/VoiceInputButton';
-import { parseOcrText } from '@/lib/ocrParser';
+import { parseOcrText, parseMembersVoice } from '@/lib/ocrParser';
 import { toast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Camera } from 'lucide-react';
 
 const ProfileForm = () => {
   const { currentUser, setCurrentUser } = useAppStore();
@@ -35,17 +35,64 @@ const ProfileForm = () => {
     setForm(prev => prev ? { ...prev, [field]: value } : prev);
   };
 
+  // Apply parsed voice/OCR text to main fields + members (by index)
+  const applyParsedText = (text: string) => {
+    const parsed = parseOcrText(text);
+    setForm(prev => {
+      if (!prev) return prev;
+      const next: FamilyProfile = {
+        ...prev,
+        name: parsed.name || prev.name,
+        nativeVillage: parsed.nativeVillage || prev.nativeVillage,
+        currentVillage: parsed.currentVillage || prev.currentVillage,
+        occupation: parsed.occupation || prev.occupation,
+        education: parsed.education || prev.education,
+        address: parsed.address || prev.address,
+        email: parsed.email || prev.email,
+        totalMembers: parsed.totalMembers || prev.totalMembers,
+        members: [...prev.members],
+      };
+
+      // Member voice segments → patch by index
+      const voiceMembers = parseMembersVoice(text);
+      voiceMembers.forEach(({ index, data }) => {
+        while (next.members.length <= index) {
+          next.members.push({
+            id: crypto.randomUUID(),
+            name: '', relation: '', occupation: '', education: '', mobile: '', gender: 'પુરુષ', photo: '',
+          });
+        }
+        next.members[index] = { ...next.members[index], ...data } as FamilyMember;
+      });
+
+      return next;
+    });
+  };
+
   const handleSave = async () => {
     if (!form.name.trim()) {
       toast({ title: 'ભૂલ', description: 'કૃપા કરી નામ દાખલ કરો', variant: 'destructive' });
       return;
     }
+    if (!form.mobile.trim()) {
+      toast({ title: 'ભૂલ', description: 'મોબાઇલ નંબર જરૂરી છે', variant: 'destructive' });
+      return;
+    }
+    // Drop blank members (no name AND no relation AND no mobile)
+    const cleanedMembers = form.members.filter(m =>
+      m.name.trim() || m.relation.trim() || m.mobile.trim()
+    );
+    const invalidMember = cleanedMembers.find(m => !m.name.trim());
+    if (invalidMember) {
+      toast({ title: 'ભૂલ', description: 'દરેક સભ્યનું નામ જરૂરી છે', variant: 'destructive' });
+      return;
+    }
     setSaving(true);
     try {
-      const saved = await saveProfile(form);
+      const saved = await saveProfile({ ...form, members: cleanedMembers });
       setCurrentUser(saved);
       setForm(saved);
-      toast({ title: 'સફળતા', description: 'માહિતી સાચવી!' });
+      toast({ title: 'સફળતા', description: `માહિતી સાચવી! (${saved.members.length} સભ્યો)` });
     } catch (err: any) {
       toast({ title: 'ભૂલ', description: err.message || 'સેવ ફેઇલ', variant: 'destructive' });
     } finally {
@@ -62,25 +109,26 @@ const ProfileForm = () => {
           animate={{ opacity: 1, y: 0 }}
           className="max-w-3xl mx-auto bg-card rounded-2xl shadow-card border border-border p-6 sm:p-8 space-y-6"
         >
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="flex flex-col gap-3">
             <h1 className="text-2xl font-bold">🧾 પરિવાર માહિતી</h1>
-            <VoiceInputButton
-              onTranscript={(text) => {
-                const parsed = parseOcrText(text);
-                setForm(prev => prev ? {
-                  ...prev,
-                  name: parsed.name || prev.name,
-                  nativeVillage: parsed.nativeVillage || prev.nativeVillage,
-                  currentVillage: parsed.currentVillage || prev.currentVillage,
-                  occupation: parsed.occupation || prev.occupation,
-                  education: parsed.education || prev.education,
-                  address: parsed.address || prev.address,
-                  email: parsed.email || prev.email,
-                } : prev);
-                toast({ title: '🎤 ભર્યું', description: text });
-              }}
-              label="🎤 બોલીને ભરો"
-            />
+            <div className="flex flex-wrap gap-2">
+              <Link to="/ocr">
+                <Button type="button" variant="outline" size="sm" className="gap-2">
+                  <Camera className="w-4 h-4" />
+                  📷 ફોર્મનો ફોટો અપલોડ કરો
+                </Button>
+              </Link>
+              <VoiceInputButton
+                onTranscript={(text) => {
+                  applyParsedText(text);
+                  toast({ title: '🎤 ભર્યું', description: text });
+                }}
+                label="🎤 બોલીને ભરો"
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              ટિપ: સભ્યો માટે બોલો — "સભ્ય 1 નામ રમેશ, સંબંધ પિતા, વ્યવસાય ખેતી, ભણતર 10, મોબાઇલ 9876543210, લિંગ પુરુષ"
+            </p>
           </div>
 
           <div className="bg-secondary/50 rounded-xl p-4 border border-border">
