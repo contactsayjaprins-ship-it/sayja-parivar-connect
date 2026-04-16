@@ -62,7 +62,26 @@ const ProfileForm = () => {
           animate={{ opacity: 1, y: 0 }}
           className="max-w-3xl mx-auto bg-card rounded-2xl shadow-card border border-border p-6 sm:p-8 space-y-6"
         >
-          <h1 className="text-2xl font-bold text-center">🧾 પરિવાર માહિતી</h1>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <h1 className="text-2xl font-bold">🧾 પરિવાર માહિતી</h1>
+            <VoiceInputButton
+              onTranscript={(text) => {
+                const parsed = parseOcrText(text);
+                setForm(prev => prev ? {
+                  ...prev,
+                  name: parsed.name || prev.name,
+                  nativeVillage: parsed.nativeVillage || prev.nativeVillage,
+                  currentVillage: parsed.currentVillage || prev.currentVillage,
+                  occupation: parsed.occupation || prev.occupation,
+                  education: parsed.education || prev.education,
+                  address: parsed.address || prev.address,
+                  email: parsed.email || prev.email,
+                } : prev);
+                toast({ title: '🎤 ભર્યું', description: text });
+              }}
+              label="🎤 બોલીને ભરો"
+            />
+          </div>
 
           <div className="bg-secondary/50 rounded-xl p-4 border border-border">
             <PhotoUpload
