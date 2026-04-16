@@ -14,7 +14,104 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      families: {
+        Row: {
+          address: string | null
+          created_at: string
+          current_village: string | null
+          education: string | null
+          email: string | null
+          id: string
+          mobile: string
+          name: string
+          native_village: string | null
+          occupation: string | null
+          profile_photo: string | null
+          total_members: number | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          current_village?: string | null
+          education?: string | null
+          email?: string | null
+          id?: string
+          mobile: string
+          name?: string
+          native_village?: string | null
+          occupation?: string | null
+          profile_photo?: string | null
+          total_members?: number | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          current_village?: string | null
+          education?: string | null
+          email?: string | null
+          id?: string
+          mobile?: string
+          name?: string
+          native_village?: string | null
+          occupation?: string | null
+          profile_photo?: string | null
+          total_members?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      family_members: {
+        Row: {
+          created_at: string
+          education: string | null
+          family_id: string
+          gender: string | null
+          id: string
+          mobile: string | null
+          name: string | null
+          occupation: string | null
+          photo: string | null
+          position: number | null
+          relation: string | null
+        }
+        Insert: {
+          created_at?: string
+          education?: string | null
+          family_id: string
+          gender?: string | null
+          id?: string
+          mobile?: string | null
+          name?: string | null
+          occupation?: string | null
+          photo?: string | null
+          position?: number | null
+          relation?: string | null
+        }
+        Update: {
+          created_at?: string
+          education?: string | null
+          family_id?: string
+          gender?: string | null
+          id?: string
+          mobile?: string | null
+          name?: string | null
+          occupation?: string | null
+          photo?: string | null
+          position?: number | null
+          relation?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "family_members_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
