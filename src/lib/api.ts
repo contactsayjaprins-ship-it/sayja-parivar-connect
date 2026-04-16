@@ -122,3 +122,41 @@ export const deleteProfileByMobile = async (mobile: string) => {
   const { error } = await supabase.from('families').delete().eq('mobile', mobile);
   if (error) throw error;
 };
+
+export const isAdminMobile = async (mobile: string): Promise<boolean> => {
+  const { data, error } = await supabase
+    .from('user_roles')
+    .select('mobile')
+    .eq('mobile', mobile)
+    .eq('role', 'admin')
+    .maybeSingle();
+  if (error) return false;
+  return !!data;
+};
+
+export const fetchAdmins = async (): Promise<string[]> => {
+  const { data, error } = await supabase
+    .from('user_roles')
+    .select('mobile')
+    .eq('role', 'admin');
+  if (error) throw error;
+  return (data || []).map((r: any) => r.mobile);
+};
+
+export const promoteToAdmin = async (mobile: string) => {
+  const cleaned = mobile.replace(/\D/g, '').slice(-10);
+  if (cleaned.length !== 10) throw new Error('અમાન્ય મોબાઇલ નંબર');
+  const { error } = await supabase
+    .from('user_roles')
+    .insert({ mobile: cleaned, role: 'admin' });
+  if (error && !error.message.includes('duplicate')) throw error;
+};
+
+export const revokeAdmin = async (mobile: string) => {
+  const { error } = await supabase
+    .from('user_roles')
+    .delete()
+    .eq('mobile', mobile)
+    .eq('role', 'admin');
+  if (error) throw error;
+};
