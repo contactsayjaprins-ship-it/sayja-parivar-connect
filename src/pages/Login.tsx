@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAppStore } from '@/lib/store';
+import { useAppStore, ADMIN_MOBILE } from '@/lib/store';
+import { loginByMobile } from '@/lib/api';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -8,22 +9,33 @@ import { motion } from 'framer-motion';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { toast } from '@/hooks/use-toast';
+import { Loader2 } from 'lucide-react';
 
 const Login = () => {
   const [mobile, setMobile] = useState('');
-  const { login } = useAppStore();
+  const [loading, setLoading] = useState(false);
+  const { setCurrentUser, setIsAdmin } = useAppStore();
   const navigate = useNavigate();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    const cleaned = mobile.replace(/\D/g, '');
+    const cleaned = mobile.replace(/\D/g, '').slice(-10);
     if (cleaned.length < 10) {
       toast({ title: 'ભૂલ', description: 'કૃપા કરી 10 અંકનો મોબાઇલ નંબર દાખલ કરો', variant: 'destructive' });
       return;
     }
-    login(cleaned.slice(-10));
-    toast({ title: 'સફળતા', description: 'લોગિન સફળ!' });
-    navigate('/profile');
+    setLoading(true);
+    try {
+      const profile = await loginByMobile(cleaned);
+      setCurrentUser(profile);
+      setIsAdmin(cleaned === ADMIN_MOBILE);
+      toast({ title: 'સફળતા', description: 'લોગિન સફળ!' });
+      navigate(cleaned === ADMIN_MOBILE ? '/admin' : '/profile');
+    } catch (err: any) {
+      toast({ title: 'ભૂલ', description: err.message || 'લોગિન ફેઇલ', variant: 'destructive' });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -49,10 +61,11 @@ const Login = () => {
                 onChange={e => setMobile(e.target.value)}
                 maxLength={13}
                 className="text-lg text-center tracking-wider"
+                disabled={loading}
               />
             </div>
-            <Button type="submit" className="w-full gradient-primary text-primary-foreground border-0 text-lg">
-              લોગિન કરો
+            <Button type="submit" disabled={loading} className="w-full gradient-primary text-primary-foreground border-0 text-lg">
+              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'લોગિન કરો'}
             </Button>
           </form>
           <p className="text-xs text-center text-muted-foreground">
