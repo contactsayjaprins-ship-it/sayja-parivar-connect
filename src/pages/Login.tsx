@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAppStore, ADMIN_MOBILE } from '@/lib/store';
-import { loginByMobile } from '@/lib/api';
+import { useAppStore } from '@/lib/store';
+import { loginByMobile, isAdminMobile } from '@/lib/api';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -27,10 +27,11 @@ const Login = () => {
     setLoading(true);
     try {
       const profile = await loginByMobile(cleaned);
+      const admin = await isAdminMobile(cleaned);
       setCurrentUser(profile);
-      setIsAdmin(cleaned === ADMIN_MOBILE);
+      setIsAdmin(admin);
       toast({ title: 'સફળતા', description: 'લોગિન સફળ!' });
-      navigate(cleaned === ADMIN_MOBILE ? '/admin' : '/profile');
+      navigate(admin ? '/admin' : '/profile');
     } catch (err: any) {
       toast({ title: 'ભૂલ', description: err.message || 'લોગિન ફેઇલ', variant: 'destructive' });
     } finally {

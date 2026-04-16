@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore, FamilyProfile } from '@/lib/store';
-import { fetchAllProfiles, deleteProfileByMobile } from '@/lib/api';
+import { fetchAllProfiles, deleteProfileByMobile, fetchAdmins, promoteToAdmin, revokeAdmin } from '@/lib/api';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
@@ -16,13 +16,20 @@ const AdminPanel = () => {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [profiles, setProfiles] = useState<FamilyProfile[]>([]);
+  const [admins, setAdmins] = useState<string[]>([]);
+  const [newAdmin, setNewAdmin] = useState('');
   const [loading, setLoading] = useState(true);
+
+  const reloadAdmins = async () => {
+    try { setAdmins(await fetchAdmins()); } catch {}
+  };
 
   useEffect(() => {
     if (!isAdmin) { navigate('/'); return; }
     (async () => {
       try {
-        setProfiles(await fetchAllProfiles());
+        const [p] = await Promise.all([fetchAllProfiles(), reloadAdmins()]);
+        setProfiles(p);
       } catch (err: any) {
         toast({ title: 'ભૂલ', description: err.message, variant: 'destructive' });
       } finally {
@@ -30,6 +37,27 @@ const AdminPanel = () => {
       }
     })();
   }, [isAdmin, navigate]);
+
+  const handlePromote = async () => {
+    try {
+      await promoteToAdmin(newAdmin);
+      setNewAdmin('');
+      await reloadAdmins();
+      toast({ title: 'સફળતા', description: 'એડમિન બનાવ્યા' });
+    } catch (err: any) {
+      toast({ title: 'ભૂલ', description: err.message, variant: 'destructive' });
+    }
+  };
+
+  const handleRevoke = async (mobile: string) => {
+    if (mobile === '8140805960') {
+      toast({ title: 'ભૂલ', description: 'મુખ્ય એડમિન દૂર ના કરી શકાય', variant: 'destructive' });
+      return;
+    }
+    if (!confirm(`${mobile} નું એડમિન દૂર કરવું?`)) return;
+    try { await revokeAdmin(mobile); await reloadAdmins(); toast({ title: 'ડિલીટ', description: 'એડમિન દૂર' }); }
+    catch (err: any) { toast({ title: 'ભૂલ', description: err.message, variant: 'destructive' }); }
+  };
 
   const filtered = profiles.filter(p =>
     p.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -93,6 +121,31 @@ const AdminPanel = () => {
             <Button onClick={exportExcel} className="gradient-primary text-primary-foreground border-0">
               📤 Excel ડાઉનલોડ
             </Button>
+          </div>
+
+          <div className="bg-card border border-border rounded-xl p-4 space-y-3">
+            <h2 className="font-semibold">👑 એડમિન મેનેજમેન્ટ</h2>
+            <div className="flex flex-wrap gap-2">
+              {admins.map(m => (
+                <span key={m} className="inline-flex items-center gap-2 bg-secondary px-3 py-1 rounded-full text-sm">
+                  {m}
+                  {m !== '8140805960' && (
+                    <button onClick={() => handleRevoke(m)} className="text-destructive hover:opacity-70">✕</button>
+                  )}
+                </span>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <Input
+                placeholder="નવા એડમિનનો મોબાઇલ"
+                value={newAdmin}
+                onChange={e => setNewAdmin(e.target.value)}
+                className="max-w-xs"
+              />
+              <Button onClick={handlePromote} disabled={!newAdmin} className="gradient-primary text-primary-foreground border-0">
+                ➕ એડમિન બનાવો
+              </Button>
+            </div>
           </div>
 
           <Input
