@@ -8,7 +8,7 @@ import { motion } from 'framer-motion';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { toast } from '@/hooks/use-toast';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 import { Loader2 } from 'lucide-react';
 
 const AdminPanel = () => {
@@ -65,38 +65,93 @@ const AdminPanel = () => {
     p.nativeVillage.toLowerCase().includes(search.toLowerCase())
   );
 
-  const exportExcel = () => {
-    const wb = XLSX.utils.book_new();
+  const exportExcel = async () => {
+    const wb = new ExcelJS.Workbook();
+    wb.creator = 'Sayja Parivar';
+    wb.created = new Date();
 
-    const mainData = profiles.map(p => ({
-      'નામ': p.name,
-      'મોબાઇલ': p.mobile,
-      'Email': p.email,
-      'મૂળ ગામ': p.nativeVillage,
-      'હાલ ગામ': p.currentVillage,
-      'વ્યવસાય': p.occupation,
-      'ભણતર': p.education,
-      'કુલ સભ્ય': p.totalMembers,
-      'એડ્રેસ': p.address,
-      'પ્રોફાઇલ ફોટો URL': p.profilePhoto || '',
-    }));
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(mainData), 'Main Data');
+    const ws = wb.addWorksheet('Family Full Data', {
+      views: [{ state: 'frozen', ySplit: 1 }],
+    });
 
-    const membersData = profiles.flatMap(p =>
-      p.members.map(m => ({
-        'યુઝર મોબાઇલ': p.mobile,
-        'નામ': m.name,
-        'સંબંધ': m.relation,
-        'વ્યવસાય': m.occupation,
-        'ભણતર': m.education,
-        'મોબાઇલ': m.mobile,
-        'લિંગ': m.gender,
-        'ફોટો URL': m.photo || '',
-      }))
-    );
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(membersData), 'Family Members');
+    ws.columns = [
+      { header: 'Family ID (Mobile)', key: 'familyId', width: 20 },
+      { header: 'Main Name', key: 'mainName', width: 22 },
+      { header: 'Main Mobile', key: 'mainMobile', width: 16 },
+      { header: 'Email', key: 'email', width: 26 },
+      { header: 'Native Village', key: 'nativeVillage', width: 20 },
+      { header: 'Current Village', key: 'currentVillage', width: 20 },
+      { header: 'Occupation', key: 'occupation', width: 18 },
+      { header: 'Education', key: 'education', width: 18 },
+      { header: 'Total Members', key: 'totalMembers', width: 14 },
+      { header: 'Address', key: 'address', width: 32 },
+      { header: 'Profile Photo URL', key: 'profilePhoto', width: 40 },
+      { header: 'Member Name', key: 'memberName', width: 22 },
+      { header: 'Relation', key: 'relation', width: 14 },
+      { header: 'Member Occupation', key: 'memberOccupation', width: 18 },
+      { header: 'Member Education', key: 'memberEducation', width: 18 },
+      { header: 'Member Mobile', key: 'memberMobile', width: 16 },
+      { header: 'Gender', key: 'gender', width: 10 },
+      { header: 'Member Photo URL', key: 'memberPhoto', width: 40 },
+    ];
 
-    XLSX.writeFile(wb, `sayja-parivar-${new Date().toISOString().slice(0, 10)}.xlsx`);
+    // Style header row
+    const header = ws.getRow(1);
+    header.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    header.alignment = { vertical: 'middle', horizontal: 'center' };
+    header.eachCell(cell => {
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F4E78' } };
+      cell.border = {
+        top: { style: 'thin' }, bottom: { style: 'thin' },
+        left: { style: 'thin' }, right: { style: 'thin' },
+      };
+    });
+    header.height = 22;
+
+    profiles.forEach(p => {
+      const mainBase = {
+        familyId: p.mobile,
+        mainName: p.name,
+        mainMobile: p.mobile,
+        email: p.email || '',
+        nativeVillage: p.nativeVillage || '',
+        currentVillage: p.currentVillage || '',
+        occupation: p.occupation || '',
+        education: p.education || '',
+        totalMembers: p.totalMembers || 0,
+        address: p.address || '',
+        profilePhoto: p.profilePhoto || '',
+      };
+
+      if (p.members.length === 0) {
+        ws.addRow({ ...mainBase, memberName: '', relation: '', memberOccupation: '', memberEducation: '', memberMobile: '', gender: '', memberPhoto: '' });
+      } else {
+        p.members.forEach(m => {
+          ws.addRow({
+            ...mainBase,
+            memberName: m.name || '',
+            relation: m.relation || '',
+            memberOccupation: m.occupation || '',
+            memberEducation: m.education || '',
+            memberMobile: m.mobile || '',
+            gender: m.gender || '',
+            memberPhoto: m.photo || '',
+          });
+        });
+      }
+    });
+
+    // Wrap address column
+    ws.getColumn('address').alignment = { wrapText: true, vertical: 'top' };
+
+    const buf = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'Sayja_Parivar_Data.xlsx';
+    a.click();
+    URL.revokeObjectURL(url);
     toast({ title: 'સફળતા', description: 'Excel ડાઉનલોડ થયું!' });
   };
 
