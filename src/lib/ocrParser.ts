@@ -3,11 +3,11 @@
 
 import { FamilyProfile, FamilyMember } from './store';
 
-type Partial = Partial<Omit<FamilyProfile, 'id' | 'mobile' | 'createdAt' | 'updatedAt' | 'members'>> & {
+export type ParsedOcr = Partial<Omit<FamilyProfile, 'id' | 'createdAt' | 'updatedAt' | 'members'>> & {
   members?: Omit<FamilyMember, 'id'>[];
 };
 
-const LABEL_MAP: { keys: string[]; field: keyof Partial }[] = [
+const LABEL_MAP: { keys: string[]; field: keyof ParsedOcr }[] = [
   { keys: ['નામ'], field: 'name' },
   { keys: ['મૂળ ગામ', 'મુળ ગામ', 'મૂળગામ'], field: 'nativeVillage' },
   { keys: ['હાલ ગામ', 'હાલગામ', 'હાલનું ગામ'], field: 'currentVillage' },
