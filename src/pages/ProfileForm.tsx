@@ -11,7 +11,6 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import FamilyMemberForm from '@/components/FamilyMemberForm';
 import PhotoUpload from '@/components/PhotoUpload';
-import VoiceInputButton from '@/components/VoiceInputButton';
 import MicButton from '@/components/MicButton';
 import { parseOcrText, parseMembersVoice } from '@/lib/ocrParser';
 import { toast } from '@/hooks/use-toast';
@@ -119,16 +118,9 @@ const ProfileForm = () => {
                   📷 ફોર્મનો ફોટો અપલોડ કરો
                 </Button>
               </Link>
-              <VoiceInputButton
-                onTranscript={(text) => {
-                  applyParsedText(text);
-                  toast({ title: '🎤 ભર્યું', description: text });
-                }}
-                label="🎤 બોલીને ભરો"
-              />
             </div>
             <p className="text-xs text-muted-foreground">
-              ટિપ: સભ્યો માટે બોલો — "સભ્ય 1 નામ રમેશ, સંબંધ પિતા, વ્યવસાય ખેતી, ભણતર 10, મોબાઇલ 9876543210, લિંગ પુરુષ"
+              ટિપ: દરેક ફીલ્ડની બાજુમાં 🎤 બટન દબાવી બોલીને ભરી શકો છો.
             </p>
           </div>
 

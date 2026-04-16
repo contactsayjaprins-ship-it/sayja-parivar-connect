@@ -5,9 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { motion, AnimatePresence } from 'framer-motion';
 import PhotoUpload from './PhotoUpload';
-import VoiceInputButton from './VoiceInputButton';
 import MicButton from './MicButton';
-import { parseMemberSentence } from '@/lib/ocrParser';
 import { RELATION_OPTIONS, normalizeRelation } from '@/lib/relations';
 import { toast } from '@/hooks/use-toast';
 
