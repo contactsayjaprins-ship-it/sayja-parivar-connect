@@ -5,9 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { motion, AnimatePresence } from 'framer-motion';
 import PhotoUpload from './PhotoUpload';
-import VoiceInputButton from './VoiceInputButton';
 import MicButton from './MicButton';
-import { parseMemberSentence } from '@/lib/ocrParser';
 import { RELATION_OPTIONS, normalizeRelation } from '@/lib/relations';
 import { toast } from '@/hooks/use-toast';
 
@@ -60,18 +58,6 @@ const FamilyMemberForm = ({ members, onChange }: Props) => {
             <div className="flex justify-between items-center flex-wrap gap-2">
               <span className="font-medium text-sm text-muted-foreground">સભ્ય {idx + 1}</span>
               <div className="flex items-center gap-2">
-                <VoiceInputButton
-                  label="🎤 બોલીને ભરો"
-                  onTranscript={(text) => {
-                    const patch = parseMemberSentence(text);
-                    if (Object.keys(patch).length === 0) {
-                      toast({ title: 'સૂચના', description: 'કોઈ ફીલ્ડ મળ્યું નહીં', variant: 'destructive' });
-                      return;
-                    }
-                    updateMemberFields(member.id, patch as Partial<FamilyMember>);
-                    toast({ title: `🎤 સભ્ય ${idx + 1} ભર્યું`, description: text });
-                  }}
-                />
                 <Button type="button" variant="ghost" size="sm" onClick={() => removeMember(member.id)} className="text-destructive">
                   ✕
                 </Button>

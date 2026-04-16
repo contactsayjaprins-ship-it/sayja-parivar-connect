@@ -60,20 +60,6 @@ const Index = () => (
           ))}
         </div>
       </section>
-
-      <section className="py-16 bg-card border-t border-border">
-        <div className="container mx-auto px-4 text-center space-y-4">
-          <h2 className="text-2xl font-bold">📞 સંપર્ક</h2>
-          <p className="text-lg font-semibold">ER. Prins Sayja</p>
-          <p className="text-muted-foreground">📞 +91 8140805960</p>
-          <a
-            href="https://wa.me/918140805960"
-            className="inline-block px-6 py-2 rounded-lg bg-green-600 text-white font-medium hover:bg-green-700 transition-colors"
-          >
-            WhatsApp કરો
-          </a>
-        </div>
-      </section>
     </main>
     <Footer />
   </div>
