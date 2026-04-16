@@ -65,7 +65,28 @@ const AdminPanel = () => {
     p.nativeVillage.toLowerCase().includes(search.toLowerCase())
   );
 
+  const [exporting, setExporting] = useState(false);
+
+  // Fetch image URL → { buffer, ext } for ExcelJS embedding
+  const fetchImage = async (url: string): Promise<{ buffer: ArrayBuffer; ext: 'png' | 'jpeg' | 'gif' } | null> => {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) return null;
+      const blob = await res.blob();
+      const buffer = await blob.arrayBuffer();
+      const type = blob.type.toLowerCase();
+      const ext: 'png' | 'jpeg' | 'gif' =
+        type.includes('png') ? 'png' :
+        type.includes('gif') ? 'gif' : 'jpeg';
+      return { buffer, ext };
+    } catch {
+      return null;
+    }
+  };
+
   const exportExcel = async () => {
+    setExporting(true);
+    try {
     const wb = new ExcelJS.Workbook();
     wb.creator = 'Sayja Parivar';
     wb.created = new Date();
@@ -85,14 +106,14 @@ const AdminPanel = () => {
       { header: 'Education', key: 'education', width: 18 },
       { header: 'Total Members', key: 'totalMembers', width: 14 },
       { header: 'Address', key: 'address', width: 32 },
-      { header: 'Profile Photo URL', key: 'profilePhoto', width: 40 },
+      { header: 'Profile Photo', key: 'profilePhoto', width: 14 },
       { header: 'Member Name', key: 'memberName', width: 22 },
       { header: 'Relation', key: 'relation', width: 14 },
       { header: 'Member Occupation', key: 'memberOccupation', width: 18 },
       { header: 'Member Education', key: 'memberEducation', width: 18 },
       { header: 'Member Mobile', key: 'memberMobile', width: 16 },
       { header: 'Gender', key: 'gender', width: 10 },
-      { header: 'Member Photo URL', key: 'memberPhoto', width: 40 },
+      { header: 'Member Photo', key: 'memberPhoto', width: 14 },
     ];
 
     // Style header row
@@ -108,6 +129,24 @@ const AdminPanel = () => {
     });
     header.height = 22;
 
+    // Collect unique URLs and fetch in parallel; cache imageId per URL
+    const uniqueUrls = Array.from(new Set(
+      profiles.flatMap(p => [p.profilePhoto, ...p.members.map(m => m.photo)]).filter((u): u is string => !!u)
+    ));
+    const imageIdMap = new Map<string, number>();
+    await Promise.all(uniqueUrls.map(async (url) => {
+      const img = await fetchImage(url);
+      if (!img) return;
+      const id = wb.addImage({ buffer: img.buffer, extension: img.ext });
+      imageIdMap.set(url, id);
+    }));
+
+    // Column indexes (0-based for ExcelJS image positioning)
+    const PROFILE_COL = 10; // 'Profile Photo'
+    const MEMBER_COL = 17;  // 'Member Photo'
+    const ROW_HEIGHT = 70;
+    const IMG_SIZE = { width: 80, height: 80 };
+
     profiles.forEach(p => {
       const mainBase = {
         familyId: p.mobile,
@@ -120,28 +159,55 @@ const AdminPanel = () => {
         education: p.education || '',
         totalMembers: p.totalMembers || 0,
         address: p.address || '',
-        profilePhoto: p.profilePhoto || '',
+        profilePhoto: '',
+      };
+
+      const addRowWithPhotos = (memberData: any, memberPhotoUrl: string) => {
+        const row = ws.addRow({ ...mainBase, ...memberData });
+        row.height = ROW_HEIGHT;
+        const rowIdx = row.number - 1; // 0-based for image anchor
+
+        const profileId = p.profilePhoto ? imageIdMap.get(p.profilePhoto) : undefined;
+        if (profileId !== undefined) {
+          ws.addImage(profileId, {
+            tl: { col: PROFILE_COL + 0.1, row: rowIdx + 0.1 },
+            ext: IMG_SIZE,
+            editAs: 'oneCell',
+          });
+        }
+        const memberId = memberPhotoUrl ? imageIdMap.get(memberPhotoUrl) : undefined;
+        if (memberId !== undefined) {
+          ws.addImage(memberId, {
+            tl: { col: MEMBER_COL + 0.1, row: rowIdx + 0.1 },
+            ext: IMG_SIZE,
+            editAs: 'oneCell',
+          });
+        }
       };
 
       if (p.members.length === 0) {
-        ws.addRow({ ...mainBase, memberName: '', relation: '', memberOccupation: '', memberEducation: '', memberMobile: '', gender: '', memberPhoto: '' });
+        addRowWithPhotos(
+          { memberName: '', relation: '', memberOccupation: '', memberEducation: '', memberMobile: '', gender: '', memberPhoto: '' },
+          ''
+        );
       } else {
         p.members.forEach(m => {
-          ws.addRow({
-            ...mainBase,
-            memberName: m.name || '',
-            relation: m.relation || '',
-            memberOccupation: m.occupation || '',
-            memberEducation: m.education || '',
-            memberMobile: m.mobile || '',
-            gender: m.gender || '',
-            memberPhoto: m.photo || '',
-          });
+          addRowWithPhotos(
+            {
+              memberName: m.name || '',
+              relation: m.relation || '',
+              memberOccupation: m.occupation || '',
+              memberEducation: m.education || '',
+              memberMobile: m.mobile || '',
+              gender: m.gender || '',
+              memberPhoto: '',
+            },
+            m.photo || ''
+          );
         });
       }
     });
 
-    // Wrap address column
     ws.getColumn('address').alignment = { wrapText: true, vertical: 'top' };
 
     const buf = await wb.xlsx.writeBuffer();
@@ -153,6 +219,11 @@ const AdminPanel = () => {
     a.click();
     URL.revokeObjectURL(url);
     toast({ title: 'સફળતા', description: 'Excel ડાઉનલોડ થયું!' });
+    } catch (err: any) {
+      toast({ title: 'ભૂલ', description: err.message || 'Export ફેઇલ', variant: 'destructive' });
+    } finally {
+      setExporting(false);
+    }
   };
 
   const handleDelete = async (mobile: string) => {
@@ -173,8 +244,8 @@ const AdminPanel = () => {
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <h1 className="text-2xl font-bold">👑 એડમિન પેનલ</h1>
-            <Button onClick={exportExcel} className="gradient-primary text-primary-foreground border-0">
-              📤 Excel ડાઉનલોડ
+            <Button onClick={exportExcel} disabled={exporting} className="gradient-primary text-primary-foreground border-0">
+              {exporting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> તૈયાર થઈ રહ્યું...</> : '📤 Excel ડાઉનલોડ'}
             </Button>
           </div>
 
