@@ -244,8 +244,8 @@ const AdminPanel = () => {
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <h1 className="text-2xl font-bold">👑 એડમિન પેનલ</h1>
-            <Button onClick={exportExcel} className="gradient-primary text-primary-foreground border-0">
-              📤 Excel ડાઉનલોડ
+            <Button onClick={exportExcel} disabled={exporting} className="gradient-primary text-primary-foreground border-0">
+              {exporting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> તૈયાર થઈ રહ્યું...</> : '📤 Excel ડાઉનલોડ'}
             </Button>
           </div>
 
