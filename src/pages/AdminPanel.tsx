@@ -16,13 +16,20 @@ const AdminPanel = () => {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [profiles, setProfiles] = useState<FamilyProfile[]>([]);
+  const [admins, setAdmins] = useState<string[]>([]);
+  const [newAdmin, setNewAdmin] = useState('');
   const [loading, setLoading] = useState(true);
+
+  const reloadAdmins = async () => {
+    try { setAdmins(await fetchAdmins()); } catch {}
+  };
 
   useEffect(() => {
     if (!isAdmin) { navigate('/'); return; }
     (async () => {
       try {
-        setProfiles(await fetchAllProfiles());
+        const [p] = await Promise.all([fetchAllProfiles(), reloadAdmins()]);
+        setProfiles(p);
       } catch (err: any) {
         toast({ title: 'ભૂલ', description: err.message, variant: 'destructive' });
       } finally {
@@ -30,6 +37,27 @@ const AdminPanel = () => {
       }
     })();
   }, [isAdmin, navigate]);
+
+  const handlePromote = async () => {
+    try {
+      await promoteToAdmin(newAdmin);
+      setNewAdmin('');
+      await reloadAdmins();
+      toast({ title: 'સફળતા', description: 'એડમિન બનાવ્યા' });
+    } catch (err: any) {
+      toast({ title: 'ભૂલ', description: err.message, variant: 'destructive' });
+    }
+  };
+
+  const handleRevoke = async (mobile: string) => {
+    if (mobile === '8140805960') {
+      toast({ title: 'ભૂલ', description: 'મુખ્ય એડમિન દૂર ના કરી શકાય', variant: 'destructive' });
+      return;
+    }
+    if (!confirm(`${mobile} નું એડમિન દૂર કરવું?`)) return;
+    try { await revokeAdmin(mobile); await reloadAdmins(); toast({ title: 'ડિલીટ', description: 'એડમિન દૂર' }); }
+    catch (err: any) { toast({ title: 'ભૂલ', description: err.message, variant: 'destructive' }); }
+  };
 
   const filtered = profiles.filter(p =>
     p.name.toLowerCase().includes(search.toLowerCase()) ||
