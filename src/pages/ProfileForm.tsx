@@ -12,6 +12,7 @@ import Footer from '@/components/Footer';
 import FamilyMemberForm from '@/components/FamilyMemberForm';
 import PhotoUpload from '@/components/PhotoUpload';
 import VoiceInputButton from '@/components/VoiceInputButton';
+import MicButton from '@/components/MicButton';
 import { parseOcrText, parseMembersVoice } from '@/lib/ocrParser';
 import { toast } from '@/hooks/use-toast';
 import { Loader2, Camera } from 'lucide-react';
@@ -142,16 +143,52 @@ const ProfileForm = () => {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div><Label>નામ *</Label><Input value={form.name} onChange={e => update('name', e.target.value)} /></div>
+            <div>
+              <Label>નામ *</Label>
+              <div className="flex gap-2">
+                <Input value={form.name} onChange={e => update('name', e.target.value)} />
+                <MicButton title="નામ" onTranscript={(t) => update('name', t)} />
+              </div>
+            </div>
             <div><Label>મોબાઇલ નંબર</Label><Input value={form.mobile} disabled className="bg-muted" /></div>
             <div><Label>Email ID</Label><Input type="email" value={form.email} onChange={e => update('email', e.target.value)} /></div>
-            <div><Label>મૂળ ગામ</Label><Input value={form.nativeVillage} onChange={e => update('nativeVillage', e.target.value)} /></div>
-            <div><Label>હાલ ગામ</Label><Input value={form.currentVillage} onChange={e => update('currentVillage', e.target.value)} /></div>
-            <div><Label>વ્યવસાય</Label><Input value={form.occupation} onChange={e => update('occupation', e.target.value)} /></div>
-            <div><Label>ભણતર</Label><Input value={form.education} onChange={e => update('education', e.target.value)} /></div>
+            <div>
+              <Label>મૂળ ગામ</Label>
+              <div className="flex gap-2">
+                <Input value={form.nativeVillage} onChange={e => update('nativeVillage', e.target.value)} />
+                <MicButton title="મૂળ ગામ" onTranscript={(t) => update('nativeVillage', t)} />
+              </div>
+            </div>
+            <div>
+              <Label>હાલ ગામ</Label>
+              <div className="flex gap-2">
+                <Input value={form.currentVillage} onChange={e => update('currentVillage', e.target.value)} />
+                <MicButton title="હાલ ગામ" onTranscript={(t) => update('currentVillage', t)} />
+              </div>
+            </div>
+            <div>
+              <Label>વ્યવસાય</Label>
+              <div className="flex gap-2">
+                <Input value={form.occupation} onChange={e => update('occupation', e.target.value)} />
+                <MicButton title="વ્યવસાય" onTranscript={(t) => update('occupation', t)} />
+              </div>
+            </div>
+            <div>
+              <Label>ભણતર</Label>
+              <div className="flex gap-2">
+                <Input value={form.education} onChange={e => update('education', e.target.value)} />
+                <MicButton title="ભણતર" onTranscript={(t) => update('education', t)} />
+              </div>
+            </div>
             <div><Label>ઘરનાં કુલ સભ્ય</Label><Input type="number" min={1} value={form.totalMembers} onChange={e => update('totalMembers', parseInt(e.target.value) || 1)} /></div>
           </div>
-          <div><Label>એડ્રેસ</Label><Textarea value={form.address} onChange={e => update('address', e.target.value)} rows={3} /></div>
+          <div>
+            <Label>એડ્રેસ</Label>
+            <div className="flex gap-2">
+              <Textarea value={form.address} onChange={e => update('address', e.target.value)} rows={3} />
+              <MicButton title="એડ્રેસ" onTranscript={(t) => update('address', t)} />
+            </div>
+          </div>
 
           <FamilyMemberForm
             members={form.members}

@@ -6,7 +6,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { motion, AnimatePresence } from 'framer-motion';
 import PhotoUpload from './PhotoUpload';
 import VoiceInputButton from './VoiceInputButton';
+import MicButton from './MicButton';
 import { parseMemberSentence } from '@/lib/ocrParser';
+import { RELATION_OPTIONS, normalizeRelation } from '@/lib/relations';
 import { toast } from '@/hooks/use-toast';
 
 interface Props {
@@ -76,11 +78,57 @@ const FamilyMemberForm = ({ members, onChange }: Props) => {
               </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div><Label>નામ</Label><Input value={member.name} onChange={e => updateMember(member.id, 'name', e.target.value)} /></div>
-              <div><Label>સંબંધ</Label><Input value={member.relation} onChange={e => updateMember(member.id, 'relation', e.target.value)} /></div>
-              <div><Label>વ્યવસાય</Label><Input value={member.occupation} onChange={e => updateMember(member.id, 'occupation', e.target.value)} /></div>
-              <div><Label>ભણતર</Label><Input value={member.education} onChange={e => updateMember(member.id, 'education', e.target.value)} /></div>
-              <div><Label>મોબાઇલ</Label><Input value={member.mobile} onChange={e => updateMember(member.id, 'mobile', e.target.value)} /></div>
+              <div>
+                <Label>નામ</Label>
+                <div className="flex gap-2">
+                  <Input value={member.name} onChange={e => updateMember(member.id, 'name', e.target.value)} />
+                  <MicButton title="નામ" onTranscript={(t) => updateMember(member.id, 'name', t)} />
+                </div>
+              </div>
+              <div>
+                <Label>સંબંધ</Label>
+                <div className="flex gap-2">
+                  <Select
+                    value={RELATION_OPTIONS.includes(member.relation as any) ? member.relation : (member.relation ? 'અન્ય' : '')}
+                    onValueChange={v => updateMember(member.id, 'relation', v)}
+                  >
+                    <SelectTrigger><SelectValue placeholder="સંબંધ પસંદ કરો" /></SelectTrigger>
+                    <SelectContent>
+                      {RELATION_OPTIONS.map(r => (
+                        <SelectItem key={r} value={r}>{r}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <MicButton
+                    title="સંબંધ"
+                    onTranscript={(t) => {
+                      const rel = normalizeRelation(t);
+                      updateMember(member.id, 'relation', rel || t);
+                    }}
+                  />
+                </div>
+              </div>
+              <div>
+                <Label>વ્યવસાય</Label>
+                <div className="flex gap-2">
+                  <Input value={member.occupation} onChange={e => updateMember(member.id, 'occupation', e.target.value)} />
+                  <MicButton title="વ્યવસાય" onTranscript={(t) => updateMember(member.id, 'occupation', t)} />
+                </div>
+              </div>
+              <div>
+                <Label>ભણતર</Label>
+                <div className="flex gap-2">
+                  <Input value={member.education} onChange={e => updateMember(member.id, 'education', e.target.value)} />
+                  <MicButton title="ભણતર" onTranscript={(t) => updateMember(member.id, 'education', t)} />
+                </div>
+              </div>
+              <div>
+                <Label>મોબાઇલ</Label>
+                <div className="flex gap-2">
+                  <Input value={member.mobile} onChange={e => updateMember(member.id, 'mobile', e.target.value.replace(/\D/g, '').slice(0, 10))} />
+                  <MicButton title="મોબાઇલ" onTranscript={(t) => updateMember(member.id, 'mobile', t.replace(/\D/g, '').slice(0, 10))} />
+                </div>
+              </div>
               <div>
                 <Label>લિંગ</Label>
                 <Select value={member.gender} onValueChange={v => updateMember(member.id, 'gender', v)}>
