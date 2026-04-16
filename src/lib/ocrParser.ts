@@ -40,10 +40,10 @@ const findTotalMembers = (val: string): number => {
   return m ? parseInt(m[0], 10) : 1;
 };
 
-export const parseOcrText = (raw: string): Partial => {
+export const parseOcrText = (raw: string): ParsedOcr => {
   const text = raw.replace(/\r/g, '');
   const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
-  const result: Partial = { members: [] };
+  const result: ParsedOcr = { members: [] };
 
   // Line-based label detection
   for (const line of lines) {
