@@ -4,6 +4,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { motion, AnimatePresence } from 'framer-motion';
+import PhotoUpload from './PhotoUpload';
 
 interface Props {
   members: FamilyMember[];
@@ -22,6 +23,7 @@ const FamilyMemberForm = ({ members, onChange }: Props) => {
         education: '',
         mobile: '',
         gender: 'પુરુષ',
+        photo: '',
       },
     ]);
   };
@@ -30,17 +32,7 @@ const FamilyMemberForm = ({ members, onChange }: Props) => {
     onChange(members.map(m => (m.id === id ? { ...m, [field]: value } : m)));
   };
 
-  const removeMember = (id: string) => {
-    onChange(members.filter(m => m.id !== id));
-  };
-
-  const handlePhotoUpload = (id: string, e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => updateMember(id, 'photo', reader.result as string);
-    reader.readAsDataURL(file);
-  };
+  const removeMember = (id: string) => onChange(members.filter(m => m.id !== id));
 
   return (
     <div className="space-y-4">
@@ -82,11 +74,12 @@ const FamilyMemberForm = ({ members, onChange }: Props) => {
                 </Select>
               </div>
             </div>
-            <div className="flex items-center gap-3">
-              <Label>📷 ફોટો</Label>
-              <Input type="file" accept="image/*" onChange={e => handlePhotoUpload(member.id, e)} className="max-w-xs" />
-              {member.photo && <img src={member.photo} alt="member" className="w-10 h-10 rounded-full object-cover" />}
-            </div>
+            <PhotoUpload
+              value={member.photo}
+              onChange={url => updateMember(member.id, 'photo', url)}
+              prefix={`members/${member.id}`}
+              label="📷 સભ્યનો ફોટો"
+            />
           </motion.div>
         ))}
       </AnimatePresence>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppStore, FamilyProfile } from '@/lib/store';
+import { saveProfile } from '@/lib/api';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -9,17 +10,22 @@ import { motion } from 'framer-motion';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import FamilyMemberForm from '@/components/FamilyMemberForm';
+import PhotoUpload from '@/components/PhotoUpload';
 import { toast } from '@/hooks/use-toast';
+import { Loader2 } from 'lucide-react';
 
 const ProfileForm = () => {
-  const { currentUser, updateProfile } = useAppStore();
+  const { currentUser, setCurrentUser } = useAppStore();
   const navigate = useNavigate();
+  const location = useLocation();
   const [form, setForm] = useState<FamilyProfile | null>(null);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!currentUser) { navigate('/login'); return; }
-    setForm({ ...currentUser });
-  }, [currentUser, navigate]);
+    const prefilled = (location.state as any)?.prefilled;
+    setForm({ ...currentUser, ...(prefilled || {}) });
+  }, [currentUser, navigate, location.state]);
 
   if (!form) return null;
 
@@ -27,13 +33,22 @@ const ProfileForm = () => {
     setForm(prev => prev ? { ...prev, [field]: value } : prev);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!form.name.trim()) {
       toast({ title: 'ભૂલ', description: 'કૃપા કરી નામ દાખલ કરો', variant: 'destructive' });
       return;
     }
-    updateProfile(form);
-    toast({ title: 'સફળતા', description: 'માહિતી સાચવી!' });
+    setSaving(true);
+    try {
+      const saved = await saveProfile(form);
+      setCurrentUser(saved);
+      setForm(saved);
+      toast({ title: 'સફળતા', description: 'માહિતી સાચવી!' });
+    } catch (err: any) {
+      toast({ title: 'ભૂલ', description: err.message || 'સેવ ફેઇલ', variant: 'destructive' });
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -46,6 +61,16 @@ const ProfileForm = () => {
           className="max-w-3xl mx-auto bg-card rounded-2xl shadow-card border border-border p-6 sm:p-8 space-y-6"
         >
           <h1 className="text-2xl font-bold text-center">🧾 પરિવાર માહિતી</h1>
+
+          <div className="bg-secondary/50 rounded-xl p-4 border border-border">
+            <PhotoUpload
+              value={form.profilePhoto}
+              onChange={url => update('profilePhoto', url)}
+              prefix={`profiles/${form.id}`}
+              size="lg"
+              label="📷 પ્રોફાઇલ ફોટો"
+            />
+          </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div><Label>નામ *</Label><Input value={form.name} onChange={e => update('name', e.target.value)} /></div>
@@ -64,8 +89,8 @@ const ProfileForm = () => {
             onChange={members => setForm(prev => prev ? { ...prev, members } : prev)}
           />
 
-          <Button onClick={handleSave} className="w-full gradient-primary text-primary-foreground border-0 text-lg py-6">
-            💾 માહિતી સાચવો
+          <Button onClick={handleSave} disabled={saving} className="w-full gradient-primary text-primary-foreground border-0 text-lg py-6">
+            {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : '💾 માહિતી સાચવો'}
           </Button>
         </motion.div>
       </main>
