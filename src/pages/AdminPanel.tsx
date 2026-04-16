@@ -123,6 +123,31 @@ const AdminPanel = () => {
             </Button>
           </div>
 
+          <div className="bg-card border border-border rounded-xl p-4 space-y-3">
+            <h2 className="font-semibold">👑 એડમિન મેનેજમેન્ટ</h2>
+            <div className="flex flex-wrap gap-2">
+              {admins.map(m => (
+                <span key={m} className="inline-flex items-center gap-2 bg-secondary px-3 py-1 rounded-full text-sm">
+                  {m}
+                  {m !== '8140805960' && (
+                    <button onClick={() => handleRevoke(m)} className="text-destructive hover:opacity-70">✕</button>
+                  )}
+                </span>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <Input
+                placeholder="નવા એડમિનનો મોબાઇલ"
+                value={newAdmin}
+                onChange={e => setNewAdmin(e.target.value)}
+                className="max-w-xs"
+              />
+              <Button onClick={handlePromote} disabled={!newAdmin} className="gradient-primary text-primary-foreground border-0">
+                ➕ એડમિન બનાવો
+              </Button>
+            </div>
+          </div>
+
           <Input
             placeholder="🔍 શોધો... (નામ, મોબાઇલ, ગામ)"
             value={search}
