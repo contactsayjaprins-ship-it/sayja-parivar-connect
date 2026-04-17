@@ -27,6 +27,7 @@ const renderHtml = (p: FamilyProfile) => {
             <div><b>સંબંધ:</b> ${esc(m.relation) || '-'} &nbsp; <b>લિંગ:</b> ${esc(m.gender) || '-'}</div>
             <div><b>વ્યવસાય:</b> ${esc(m.occupation) || '-'} &nbsp; <b>ભણતર:</b> ${esc(m.education) || '-'}</div>
             <div><b>મોબાઇલ:</b> ${esc(m.mobile) || '-'}</div>
+            ${m.govJob === 'Yes' ? `<div><b>સરકારી નોકરી:</b> હા &nbsp; <b>જગ્યા:</b> ${esc(m.govJobPlace) || '-'}</div>` : ''}
           </div>
         </div>`,
         )
@@ -50,6 +51,7 @@ const renderHtml = (p: FamilyProfile) => {
       <div><b>મોબાઇલ:</b> ${esc(p.mobile)} &nbsp; <b>Email:</b> ${esc(p.email) || '-'}</div>
       <div><b>મૂળ ગામ:</b> ${esc(p.nativeVillage) || '-'} &nbsp; <b>હાલ ગામ:</b> ${esc(p.currentVillage) || '-'}</div>
       <div><b>વ્યવસાય:</b> ${esc(p.occupation) || '-'} &nbsp; <b>ભણતર:</b> ${esc(p.education) || '-'}</div>
+      ${p.govJob === 'Yes' ? `<div><b>સરકારી નોકરી:</b> હા &nbsp; <b>જગ્યા:</b> ${esc(p.govJobPlace) || '-'}</div>` : `<div><b>સરકારી નોકરી:</b> ના</div>`}
       <div><b>કુલ સભ્ય:</b> ${p.totalMembers}</div>
     </div>
   </div>
