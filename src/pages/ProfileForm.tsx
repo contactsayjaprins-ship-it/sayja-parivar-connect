@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { useAppStore, FamilyProfile, FamilyMember } from '@/lib/store';
+import { useNavigate } from 'react-router-dom';
+import { useAppStore, FamilyProfile, DEFAULT_SURNAME } from '@/lib/store';
 import { saveProfile } from '@/lib/api';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,61 +12,25 @@ import Footer from '@/components/Footer';
 import FamilyMemberForm from '@/components/FamilyMemberForm';
 import PhotoUpload from '@/components/PhotoUpload';
 import MicButton from '@/components/MicButton';
-import { parseOcrText, parseMembersVoice } from '@/lib/ocrParser';
 import { toast } from '@/hooks/use-toast';
-import { Loader2, Camera } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
+import { generateAndDownloadPdf } from '@/lib/pdfGenerator';
 
 const ProfileForm = () => {
   const { currentUser, setCurrentUser } = useAppStore();
   const navigate = useNavigate();
-  const location = useLocation();
   const [form, setForm] = useState<FamilyProfile | null>(null);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!currentUser) { navigate('/login'); return; }
-    const prefilled = (location.state as any)?.prefilled;
-    setForm({ ...currentUser, ...(prefilled || {}) });
-  }, [currentUser, navigate, location.state]);
+    setForm({ ...currentUser, surname: currentUser.surname || DEFAULT_SURNAME });
+  }, [currentUser, navigate]);
 
   if (!form) return null;
 
   const update = (field: keyof FamilyProfile, value: string | number) => {
     setForm(prev => prev ? { ...prev, [field]: value } : prev);
-  };
-
-  // Apply parsed voice/OCR text to main fields + members (by index)
-  const applyParsedText = (text: string) => {
-    const parsed = parseOcrText(text);
-    setForm(prev => {
-      if (!prev) return prev;
-      const next: FamilyProfile = {
-        ...prev,
-        name: parsed.name || prev.name,
-        nativeVillage: parsed.nativeVillage || prev.nativeVillage,
-        currentVillage: parsed.currentVillage || prev.currentVillage,
-        occupation: parsed.occupation || prev.occupation,
-        education: parsed.education || prev.education,
-        address: parsed.address || prev.address,
-        email: parsed.email || prev.email,
-        totalMembers: parsed.totalMembers || prev.totalMembers,
-        members: [...prev.members],
-      };
-
-      // Member voice segments → patch by index
-      const voiceMembers = parseMembersVoice(text);
-      voiceMembers.forEach(({ index, data }) => {
-        while (next.members.length <= index) {
-          next.members.push({
-            id: crypto.randomUUID(),
-            name: '', relation: '', occupation: '', education: '', mobile: '', gender: 'પુરુષ', photo: '',
-          });
-        }
-        next.members[index] = { ...next.members[index], ...data } as FamilyMember;
-      });
-
-      return next;
-    });
   };
 
   const handleSave = async () => {
@@ -78,7 +42,6 @@ const ProfileForm = () => {
       toast({ title: 'ભૂલ', description: 'મોબાઇલ નંબર જરૂરી છે', variant: 'destructive' });
       return;
     }
-    // Drop blank members (no name AND no relation AND no mobile)
     const cleanedMembers = form.members.filter(m =>
       m.name.trim() || m.relation.trim() || m.mobile.trim()
     );
@@ -92,11 +55,23 @@ const ProfileForm = () => {
       const saved = await saveProfile({ ...form, members: cleanedMembers });
       setCurrentUser(saved);
       setForm(saved);
-      toast({ title: 'સફળતા', description: `માહિતી સાચવી! (${saved.members.length} સભ્યો)` });
+      toast({ title: '✅ સફળતા', description: `માહિતી સાચવી! PDF બની રહ્યું છે...` });
+      try {
+        await generateAndDownloadPdf(saved);
+        toast({ title: '📄 PDF તૈયાર', description: 'ડાઉનલોડ શરૂ થઈ ગયું' });
+      } catch (e: any) {
+        toast({ title: 'PDF ભૂલ', description: e.message || 'PDF બનાવવામાં સમસ્યા', variant: 'destructive' });
+      }
     } catch (err: any) {
       toast({ title: 'ભૂલ', description: err.message || 'સેવ ફેઇલ', variant: 'destructive' });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDownloadAgain = async () => {
+    try { await generateAndDownloadPdf(form); } catch (e: any) {
+      toast({ title: 'ભૂલ', description: e.message, variant: 'destructive' });
     }
   };
 
@@ -109,19 +84,10 @@ const ProfileForm = () => {
           animate={{ opacity: 1, y: 0 }}
           className="max-w-3xl mx-auto bg-card rounded-2xl shadow-card border border-border p-6 sm:p-8 space-y-6"
         >
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-2">
             <h1 className="text-2xl font-bold">🧾 પરિવાર માહિતી</h1>
-            <div className="flex flex-wrap gap-2">
-              <Link to="/ocr">
-                <Button type="button" variant="outline" size="sm" className="gap-2">
-                  <Camera className="w-4 h-4" />
-                  📷 ફોર્મનો ફોટો અપલોડ કરો
-                </Button>
-              </Link>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              ટિપ: દરેક ફીલ્ડની બાજુમાં 🎤 બટન દબાવી બોલીને ભરી શકો છો.
-            </p>
+            <p className="text-sm text-muted-foreground">અહીં તમારી માહિતી ભરો. બધું સાચવ્યા પછી PDF આપોઆપ ડાઉનલોડ થશે.</p>
+            <p className="text-xs text-muted-foreground">ટિપ: દરેક ફીલ્ડની બાજુમાં 🎤 બટન દબાવી બોલીને ભરી શકો છો.</p>
           </div>
 
           <div className="bg-secondary/50 rounded-xl p-4 border border-border">
@@ -130,7 +96,7 @@ const ProfileForm = () => {
               onChange={url => update('profilePhoto', url)}
               prefix={`profiles/${form.id}`}
               size="lg"
-              label="📷 પ્રોફાઇલ ફોટો"
+              label="📷 પ્રોફાઇલ ફોટો (મુખ્ય વ્યક્તિ)"
             />
           </div>
 
@@ -142,8 +108,12 @@ const ProfileForm = () => {
                 <MicButton title="નામ" onTranscript={(t) => update('name', t)} />
               </div>
             </div>
+            <div>
+              <Label>અટક</Label>
+              <Input value={form.surname} onChange={e => update('surname', e.target.value)} placeholder="સાયજા" />
+            </div>
             <div><Label>મોબાઇલ નંબર</Label><Input value={form.mobile} disabled className="bg-muted" /></div>
-            <div><Label>Email ID</Label><Input type="email" value={form.email} onChange={e => update('email', e.target.value)} /></div>
+            <div><Label>Email</Label><Input type="email" value={form.email} onChange={e => update('email', e.target.value)} /></div>
             <div>
               <Label>મૂળ ગામ</Label>
               <div className="flex gap-2">
@@ -174,6 +144,7 @@ const ProfileForm = () => {
             </div>
             <div><Label>ઘરનાં કુલ સભ્ય</Label><Input type="number" min={1} value={form.totalMembers} onChange={e => update('totalMembers', parseInt(e.target.value) || 1)} /></div>
           </div>
+
           <div>
             <Label>એડ્રેસ</Label>
             <div className="flex gap-2">
@@ -187,9 +158,24 @@ const ProfileForm = () => {
             onChange={members => setForm(prev => prev ? { ...prev, members } : prev)}
           />
 
-          <Button onClick={handleSave} disabled={saving} className="w-full gradient-primary text-primary-foreground border-0 text-lg py-6">
-            {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : '💾 માહિતી સાચવો'}
-          </Button>
+          <div className="bg-secondary/50 rounded-xl p-4 border border-border">
+            <PhotoUpload
+              value={form.formPhoto}
+              onChange={url => update('formPhoto', url)}
+              prefix={`forms/${form.id}`}
+              size="lg"
+              label="📄 ભરેલા ફોર્મનો ફોટો (વૈકલ્પિક — ફક્ત સાચવાશે)"
+            />
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Button onClick={handleSave} disabled={saving} className="flex-1 gradient-primary text-primary-foreground border-0 text-lg py-6">
+              {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : '💾 સાચવો અને PDF ડાઉનલોડ કરો'}
+            </Button>
+            <Button type="button" variant="outline" onClick={handleDownloadAgain} className="text-lg py-6">
+              📄 PDF ફરી ડાઉનલોડ
+            </Button>
+          </div>
         </motion.div>
       </main>
       <Footer />

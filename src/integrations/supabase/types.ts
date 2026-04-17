@@ -21,12 +21,14 @@ export type Database = {
           current_village: string | null
           education: string | null
           email: string | null
+          form_photo: string | null
           id: string
           mobile: string
           name: string
           native_village: string | null
           occupation: string | null
           profile_photo: string | null
+          surname: string
           total_members: number | null
           updated_at: string
         }
@@ -36,12 +38,14 @@ export type Database = {
           current_village?: string | null
           education?: string | null
           email?: string | null
+          form_photo?: string | null
           id?: string
           mobile: string
           name?: string
           native_village?: string | null
           occupation?: string | null
           profile_photo?: string | null
+          surname?: string
           total_members?: number | null
           updated_at?: string
         }
@@ -51,12 +55,14 @@ export type Database = {
           current_village?: string | null
           education?: string | null
           email?: string | null
+          form_photo?: string | null
           id?: string
           mobile?: string
           name?: string
           native_village?: string | null
           occupation?: string | null
           profile_photo?: string | null
+          surname?: string
           total_members?: number | null
           updated_at?: string
         }

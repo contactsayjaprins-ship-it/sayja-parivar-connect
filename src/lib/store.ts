@@ -15,6 +15,7 @@ export interface FamilyMember {
 export interface FamilyProfile {
   id: string;
   name: string;
+  surname: string;
   mobile: string;
   email: string;
   nativeVillage: string;
@@ -24,6 +25,7 @@ export interface FamilyProfile {
   totalMembers: number;
   address: string;
   profilePhoto?: string;
+  formPhoto?: string;
   members: FamilyMember[];
   createdAt: string;
   updatedAt: string;
@@ -38,6 +40,7 @@ interface AppState {
 }
 
 export const ADMIN_MOBILE = '8140805960';
+export const DEFAULT_SURNAME = 'સાયજા';
 
 export const useAppStore = create<AppState>()(
   persist(

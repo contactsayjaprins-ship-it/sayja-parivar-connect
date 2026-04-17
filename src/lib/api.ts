@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { FamilyProfile, FamilyMember } from './store';
+import { FamilyProfile, FamilyMember, DEFAULT_SURNAME } from './store';
 
 const BUCKET = 'family-photos';
 
@@ -12,16 +12,10 @@ export const uploadPhoto = async (file: File, prefix: string): Promise<string> =
   return data.publicUrl;
 };
 
-export const uploadDataUrl = async (dataUrl: string, prefix: string): Promise<string> => {
-  const res = await fetch(dataUrl);
-  const blob = await res.blob();
-  const file = new File([blob], 'photo.jpg', { type: blob.type || 'image/jpeg' });
-  return uploadPhoto(file, prefix);
-};
-
 const rowToProfile = (f: any, members: any[]): FamilyProfile => ({
   id: f.id,
   name: f.name || '',
+  surname: f.surname || DEFAULT_SURNAME,
   mobile: f.mobile,
   email: f.email || '',
   nativeVillage: f.native_village || '',
@@ -31,6 +25,7 @@ const rowToProfile = (f: any, members: any[]): FamilyProfile => ({
   totalMembers: f.total_members || 1,
   address: f.address || '',
   profilePhoto: f.profile_photo || '',
+  formPhoto: f.form_photo || '',
   createdAt: f.created_at,
   updatedAt: f.updated_at,
   members: (members || [])
@@ -70,6 +65,7 @@ export const saveProfile = async (profile: FamilyProfile): Promise<FamilyProfile
     .from('families')
     .update({
       name: profile.name,
+      surname: profile.surname || DEFAULT_SURNAME,
       email: profile.email,
       native_village: profile.nativeVillage,
       current_village: profile.currentVillage,
@@ -78,11 +74,11 @@ export const saveProfile = async (profile: FamilyProfile): Promise<FamilyProfile
       total_members: profile.totalMembers,
       address: profile.address,
       profile_photo: profile.profilePhoto || '',
-    })
+      form_photo: profile.formPhoto || '',
+    } as any)
     .eq('id', profile.id);
   if (updErr) throw updErr;
 
-  // Replace members
   await supabase.from('family_members').delete().eq('family_id', profile.id);
   if (profile.members.length) {
     const rows = profile.members.map((m, i) => ({
