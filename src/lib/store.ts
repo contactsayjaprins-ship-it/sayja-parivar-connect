@@ -6,6 +6,8 @@ export interface FamilyMember {
   name: string;
   relation: string;
   occupation: string;
+  govJob: 'Yes' | 'No';
+  govJobPlace: string;
   education: string;
   mobile: string;
   gender: 'પુરુષ' | 'સ્ત્રી';
@@ -21,6 +23,8 @@ export interface FamilyProfile {
   nativeVillage: string;
   currentVillage: string;
   occupation: string;
+  govJob: 'Yes' | 'No';
+  govJobPlace: string;
   education: string;
   totalMembers: number;
   address: string;

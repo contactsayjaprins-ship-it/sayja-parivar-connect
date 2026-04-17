@@ -19,6 +19,8 @@ const emptyMember = (): FamilyMember => ({
   name: '',
   relation: '',
   occupation: '',
+  govJob: 'No',
+  govJobPlace: '',
   education: '',
   mobile: '',
   gender: 'પુરુષ',
@@ -101,6 +103,25 @@ const FamilyMemberForm = ({ members, onChange }: Props) => {
                   <MicButton title="વ્યવસાય" onTranscript={(t) => updateMember(member.id, 'occupation', t)} />
                 </div>
               </div>
+              <div>
+                <Label>સરકારી નોકરી છે?</Label>
+                <Select value={member.govJob} onValueChange={v => updateMember(member.id, 'govJob', v)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="No">ના</SelectItem>
+                    <SelectItem value="Yes">હા</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {member.govJob === 'Yes' && (
+                <div className="sm:col-span-2">
+                  <Label>કઈ જગ્યા / વિભાગ?</Label>
+                  <div className="flex gap-2">
+                    <Input value={member.govJobPlace} onChange={e => updateMember(member.id, 'govJobPlace', e.target.value)} />
+                    <MicButton title="જગ્યા" onTranscript={(t) => updateMember(member.id, 'govJobPlace', t)} />
+                  </div>
+                </div>
+              )}
               <div>
                 <Label>ભણતર</Label>
                 <div className="flex gap-2">

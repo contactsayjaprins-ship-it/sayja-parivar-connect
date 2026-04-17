@@ -136,6 +136,26 @@ const ProfileForm = () => {
               </div>
             </div>
             <div>
+              <Label>સરકારી નોકરી છે?</Label>
+              <select
+                value={form.govJob || 'No'}
+                onChange={e => update('govJob', e.target.value)}
+                className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
+              >
+                <option value="No">ના</option>
+                <option value="Yes">હા</option>
+              </select>
+            </div>
+            {form.govJob === 'Yes' && (
+              <div className="sm:col-span-2">
+                <Label>કઈ જગ્યા / વિભાગ?</Label>
+                <div className="flex gap-2">
+                  <Input value={form.govJobPlace} onChange={e => update('govJobPlace', e.target.value)} />
+                  <MicButton title="જગ્યા" onTranscript={(t) => update('govJobPlace', t)} />
+                </div>
+              </div>
+            )}
+            <div>
               <Label>ભણતર</Label>
               <div className="flex gap-2">
                 <Input value={form.education} onChange={e => update('education', e.target.value)} />

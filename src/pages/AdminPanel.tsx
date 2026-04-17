@@ -87,138 +87,158 @@ const AdminPanel = () => {
   const exportExcel = async () => {
     setExporting(true);
     try {
-    const wb = new ExcelJS.Workbook();
-    wb.creator = 'Sayja Parivar';
-    wb.created = new Date();
+      const wb = new ExcelJS.Workbook();
+      wb.creator = 'Sayja Parivar';
+      wb.created = new Date();
 
-    const ws = wb.addWorksheet('Family Full Data', {
-      views: [{ state: 'frozen', ySplit: 1 }],
-    });
+      const ws = wb.addWorksheet('Family Full Data', {
+        views: [{ state: 'frozen', ySplit: 1 }],
+      });
 
-    ws.columns = [
-      { header: 'Family ID (Mobile)', key: 'familyId', width: 20 },
-      { header: 'Main Name', key: 'mainName', width: 22 },
-      { header: 'Main Mobile', key: 'mainMobile', width: 16 },
-      { header: 'Email', key: 'email', width: 26 },
-      { header: 'Native Village', key: 'nativeVillage', width: 20 },
-      { header: 'Current Village', key: 'currentVillage', width: 20 },
-      { header: 'Occupation', key: 'occupation', width: 18 },
-      { header: 'Education', key: 'education', width: 18 },
-      { header: 'Total Members', key: 'totalMembers', width: 14 },
-      { header: 'Address', key: 'address', width: 32 },
-      { header: 'Profile Photo', key: 'profilePhoto', width: 14 },
-      { header: 'Member Name', key: 'memberName', width: 22 },
-      { header: 'Relation', key: 'relation', width: 14 },
-      { header: 'Member Occupation', key: 'memberOccupation', width: 18 },
-      { header: 'Member Education', key: 'memberEducation', width: 18 },
-      { header: 'Member Mobile', key: 'memberMobile', width: 16 },
-      { header: 'Gender', key: 'gender', width: 10 },
-      { header: 'Member Photo', key: 'memberPhoto', width: 14 },
-    ];
+      // Find max members across all families to build dynamic columns
+      const maxMembers = profiles.reduce((m, p) => Math.max(m, p.members.length), 0);
 
-    // Style header row
-    const header = ws.getRow(1);
-    header.font = { bold: true, color: { argb: 'FFFFFFFF' } };
-    header.alignment = { vertical: 'middle', horizontal: 'center' };
-    header.eachCell(cell => {
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F4E78' } };
-      cell.border = {
-        top: { style: 'thin' }, bottom: { style: 'thin' },
-        left: { style: 'thin' }, right: { style: 'thin' },
-      };
-    });
-    header.height = 22;
+      // Build header columns: main fields + N×member fields → ONE row per family
+      const baseCols = [
+        { header: 'Family ID (Mobile)', key: 'familyId', width: 20 },
+        { header: 'Main Name', key: 'mainName', width: 22 },
+        { header: 'Surname', key: 'surname', width: 14 },
+        { header: 'Main Mobile', key: 'mainMobile', width: 16 },
+        { header: 'Email', key: 'email', width: 26 },
+        { header: 'Native Village', key: 'nativeVillage', width: 18 },
+        { header: 'Current Village', key: 'currentVillage', width: 18 },
+        { header: 'Occupation', key: 'occupation', width: 18 },
+        { header: 'Government Job', key: 'govJob', width: 14 },
+        { header: 'Govt Job Place', key: 'govJobPlace', width: 22 },
+        { header: 'Education', key: 'education', width: 18 },
+        { header: 'Total Members', key: 'totalMembers', width: 12 },
+        { header: 'Address', key: 'address', width: 30 },
+        { header: 'Profile Photo', key: 'profilePhoto', width: 16 },
+        { header: 'Form Photo URL', key: 'formPhoto', width: 30 },
+      ];
 
-    // Collect unique URLs and fetch in parallel; cache imageId per URL
-    const uniqueUrls = Array.from(new Set(
-      profiles.flatMap(p => [p.profilePhoto, ...p.members.map(m => m.photo)]).filter((u): u is string => !!u)
-    ));
-    const imageIdMap = new Map<string, number>();
-    await Promise.all(uniqueUrls.map(async (url) => {
-      const img = await fetchImage(url);
-      if (!img) return;
-      const id = wb.addImage({ buffer: img.buffer, extension: img.ext });
-      imageIdMap.set(url, id);
-    }));
-
-    // Column indexes (0-based for ExcelJS image positioning)
-    const PROFILE_COL = 10; // 'Profile Photo'
-    const MEMBER_COL = 17;  // 'Member Photo'
-    const ROW_HEIGHT = 70;
-    const IMG_SIZE = { width: 80, height: 80 };
-
-    profiles.forEach(p => {
-      const mainBase = {
-        familyId: p.mobile,
-        mainName: p.name,
-        mainMobile: p.mobile,
-        email: p.email || '',
-        nativeVillage: p.nativeVillage || '',
-        currentVillage: p.currentVillage || '',
-        occupation: p.occupation || '',
-        education: p.education || '',
-        totalMembers: p.totalMembers || 0,
-        address: p.address || '',
-        profilePhoto: '',
-      };
-
-      const addRowWithPhotos = (memberData: any, memberPhotoUrl: string) => {
-        const row = ws.addRow({ ...mainBase, ...memberData });
-        row.height = ROW_HEIGHT;
-        const rowIdx = row.number - 1; // 0-based for image anchor
-
-        const profileId = p.profilePhoto ? imageIdMap.get(p.profilePhoto) : undefined;
-        if (profileId !== undefined) {
-          ws.addImage(profileId, {
-            tl: { col: PROFILE_COL + 0.1, row: rowIdx + 0.1 },
-            ext: IMG_SIZE,
-            editAs: 'oneCell',
-          });
-        }
-        const memberId = memberPhotoUrl ? imageIdMap.get(memberPhotoUrl) : undefined;
-        if (memberId !== undefined) {
-          ws.addImage(memberId, {
-            tl: { col: MEMBER_COL + 0.1, row: rowIdx + 0.1 },
-            ext: IMG_SIZE,
-            editAs: 'oneCell',
-          });
-        }
-      };
-
-      if (p.members.length === 0) {
-        addRowWithPhotos(
-          { memberName: '', relation: '', memberOccupation: '', memberEducation: '', memberMobile: '', gender: '', memberPhoto: '' },
-          ''
+      const memberCols: any[] = [];
+      for (let i = 1; i <= maxMembers; i++) {
+        memberCols.push(
+          { header: `Member ${i} Name`, key: `m${i}_name`, width: 20 },
+          { header: `Member ${i} Relation`, key: `m${i}_relation`, width: 14 },
+          { header: `Member ${i} Occupation`, key: `m${i}_occupation`, width: 16 },
+          { header: `Member ${i} Govt Job`, key: `m${i}_govJob`, width: 12 },
+          { header: `Member ${i} Govt Place`, key: `m${i}_govJobPlace`, width: 18 },
+          { header: `Member ${i} Education`, key: `m${i}_education`, width: 16 },
+          { header: `Member ${i} Mobile`, key: `m${i}_mobile`, width: 14 },
+          { header: `Member ${i} Gender`, key: `m${i}_gender`, width: 10 },
+          { header: `Member ${i} Photo`, key: `m${i}_photo`, width: 16 },
         );
-      } else {
-        p.members.forEach(m => {
-          addRowWithPhotos(
-            {
-              memberName: m.name || '',
-              relation: m.relation || '',
-              memberOccupation: m.occupation || '',
-              memberEducation: m.education || '',
-              memberMobile: m.mobile || '',
-              gender: m.gender || '',
-              memberPhoto: '',
-            },
-            m.photo || ''
-          );
-        });
       }
-    });
 
-    ws.getColumn('address').alignment = { wrapText: true, vertical: 'top' };
+      ws.columns = [...baseCols, ...memberCols];
 
-    const buf = await wb.xlsx.writeBuffer();
-    const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'Sayja_Parivar_Data.xlsx';
-    a.click();
-    URL.revokeObjectURL(url);
-    toast({ title: 'સફળતા', description: 'Excel ડાઉનલોડ થયું!' });
+      // Style header row
+      const header = ws.getRow(1);
+      header.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+      header.alignment = { vertical: 'middle', horizontal: 'center' };
+      header.eachCell(cell => {
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F4E78' } };
+        cell.border = {
+          top: { style: 'thin' }, bottom: { style: 'thin' },
+          left: { style: 'thin' }, right: { style: 'thin' },
+        };
+      });
+      header.height = 24;
+
+      // Pre-fetch all unique images
+      const uniqueUrls = Array.from(new Set(
+        profiles.flatMap(p => [p.profilePhoto, ...p.members.map(m => m.photo)]).filter((u): u is string => !!u)
+      ));
+      const imageIdMap = new Map<string, number>();
+      await Promise.all(uniqueUrls.map(async (url) => {
+        const img = await fetchImage(url);
+        if (!img) return;
+        const id = wb.addImage({ buffer: img.buffer, extension: img.ext });
+        imageIdMap.set(url, id);
+      }));
+
+      const ROW_HEIGHT = 70;
+      const IMG_SIZE = { width: 80, height: 80 };
+      // 0-based column index for "Profile Photo"
+      const PROFILE_COL = baseCols.findIndex(c => c.key === 'profilePhoto');
+
+      profiles.forEach(p => {
+        const rowData: Record<string, any> = {
+          familyId: p.mobile,
+          mainName: p.name,
+          surname: p.surname || '',
+          mainMobile: p.mobile,
+          email: p.email || '',
+          nativeVillage: p.nativeVillage || '',
+          currentVillage: p.currentVillage || '',
+          occupation: p.occupation || '',
+          govJob: p.govJob || 'No',
+          govJobPlace: p.govJobPlace || '',
+          education: p.education || '',
+          totalMembers: p.totalMembers || 0,
+          address: p.address || '',
+          profilePhoto: '',
+          formPhoto: p.formPhoto || '',
+        };
+
+        p.members.forEach((m, i) => {
+          const k = i + 1;
+          rowData[`m${k}_name`] = m.name || '';
+          rowData[`m${k}_relation`] = m.relation || '';
+          rowData[`m${k}_occupation`] = m.occupation || '';
+          rowData[`m${k}_govJob`] = m.govJob || 'No';
+          rowData[`m${k}_govJobPlace`] = m.govJobPlace || '';
+          rowData[`m${k}_education`] = m.education || '';
+          rowData[`m${k}_mobile`] = m.mobile || '';
+          rowData[`m${k}_gender`] = m.gender || '';
+          rowData[`m${k}_photo`] = '';
+        });
+
+        const row = ws.addRow(rowData);
+        row.height = ROW_HEIGHT;
+        const rowIdx = row.number - 1;
+
+        // Embed profile photo
+        if (p.profilePhoto) {
+          const id = imageIdMap.get(p.profilePhoto);
+          if (id !== undefined) {
+            ws.addImage(id, {
+              tl: { col: PROFILE_COL + 0.1, row: rowIdx + 0.1 },
+              ext: IMG_SIZE,
+              editAs: 'oneCell',
+            });
+          }
+        }
+
+        // Embed each member photo
+        p.members.forEach((m, i) => {
+          if (!m.photo) return;
+          const id = imageIdMap.get(m.photo);
+          if (id === undefined) return;
+          // photo column = index of `m{i+1}_photo` key in ws.columns
+          const colIdx = ws.columns.findIndex(c => c.key === `m${i + 1}_photo`);
+          if (colIdx < 0) return;
+          ws.addImage(id, {
+            tl: { col: colIdx + 0.1, row: rowIdx + 0.1 },
+            ext: IMG_SIZE,
+            editAs: 'oneCell',
+          });
+        });
+      });
+
+      ws.getColumn('address').alignment = { wrapText: true, vertical: 'top' };
+
+      const buf = await wb.xlsx.writeBuffer();
+      const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'Sayja_Parivar_Data.xlsx';
+      a.click();
+      URL.revokeObjectURL(url);
+      toast({ title: 'સફળતા', description: 'Excel ડાઉનલોડ થયું! (એક પરિવાર = એક પંક્તિ)' });
     } catch (err: any) {
       toast({ title: 'ભૂલ', description: err.message || 'Export ફેઇલ', variant: 'destructive' });
     } finally {

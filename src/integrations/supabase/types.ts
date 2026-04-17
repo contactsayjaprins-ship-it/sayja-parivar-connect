@@ -22,6 +22,8 @@ export type Database = {
           education: string | null
           email: string | null
           form_photo: string | null
+          gov_job: string
+          gov_job_place: string
           id: string
           mobile: string
           name: string
@@ -39,6 +41,8 @@ export type Database = {
           education?: string | null
           email?: string | null
           form_photo?: string | null
+          gov_job?: string
+          gov_job_place?: string
           id?: string
           mobile: string
           name?: string
@@ -56,6 +60,8 @@ export type Database = {
           education?: string | null
           email?: string | null
           form_photo?: string | null
+          gov_job?: string
+          gov_job_place?: string
           id?: string
           mobile?: string
           name?: string
@@ -74,6 +80,8 @@ export type Database = {
           education: string | null
           family_id: string
           gender: string | null
+          gov_job: string
+          gov_job_place: string
           id: string
           mobile: string | null
           name: string | null
@@ -87,6 +95,8 @@ export type Database = {
           education?: string | null
           family_id: string
           gender?: string | null
+          gov_job?: string
+          gov_job_place?: string
           id?: string
           mobile?: string | null
           name?: string | null
@@ -100,6 +110,8 @@ export type Database = {
           education?: string | null
           family_id?: string
           gender?: string | null
+          gov_job?: string
+          gov_job_place?: string
           id?: string
           mobile?: string | null
           name?: string | null
