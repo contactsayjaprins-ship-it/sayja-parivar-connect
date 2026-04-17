@@ -19,19 +19,15 @@ const Index = () => (
           >
             <h1 className="text-4xl sm:text-6xl font-bold tracking-tight">
               <span className="gradient-primary bg-clip-text" style={{ WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                સાજા પરિવાર
+                સાયજા પરિવાર
               </span>
             </h1>
-            <p className="text-xl text-muted-foreground">પરિવાર ની સંપૂર્ણ વિગત</p>
+            <p className="text-xl text-muted-foreground">પરિવાર ની સંપૂર્ણ વિગત — સરળ ગુજરાતીમાં</p>
+            <p className="text-base text-muted-foreground">અહીં તમારી માહિતી ભરો, ફોટા અપલોડ કરો અને PDF મેળવો</p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
               <Link to="/login">
                 <Button size="lg" className="gradient-primary text-primary-foreground border-0 shadow-elevated text-lg px-8">
                   ➕ નવી માહિતી ઉમેરો
-                </Button>
-              </Link>
-              <Link to="/ocr">
-                <Button size="lg" variant="outline" className="text-lg px-8">
-                  📷 ફોર્મનો ફોટો અપલોડ કરો
                 </Button>
               </Link>
             </div>
@@ -42,9 +38,9 @@ const Index = () => (
       <section className="py-16 container mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {[
-            { icon: '📝', title: 'સરળ ફોર્મ', desc: 'ગુજરાતીમાં પરિવારની વિગત ભરો' },
-            { icon: '📷', title: 'OCR ટેકનોલોજી', desc: 'ફોટોમાંથી ડેટા ઓટોમેટિક ભરો' },
-            { icon: '📊', title: 'Excel એક્સપોર્ટ', desc: 'તમામ ડેટા Excel માં ડાઉનલોડ કરો' },
+            { icon: '📝', title: 'સરળ ફોર્મ', desc: 'ગુજરાતીમાં પરિવારની માહિતી ભરો' },
+            { icon: '📷', title: 'ફોટો અપલોડ', desc: 'મુખ્ય + દરેક સભ્યના ફોટા સાચવો' },
+            { icon: '📄', title: 'PDF ડાઉનલોડ', desc: 'સેવ કરતા જ આપોઆપ PDF મળશે' },
           ].map((item, i) => (
             <motion.div
               key={i}
