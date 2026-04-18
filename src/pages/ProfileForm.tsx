@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAppStore, FamilyProfile, DEFAULT_SURNAME } from '@/lib/store';
-import { saveProfile } from '@/lib/api';
+import { useAppStore, FamilyProfile, DEFAULT_SURNAME, CATEGORY_TAGS, BLOOD_GROUPS } from '@/lib/store';
+import { saveProfile, uploadGalleryPhoto } from '@/lib/api';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -13,8 +13,9 @@ import FamilyMemberForm from '@/components/FamilyMemberForm';
 import PhotoUpload from '@/components/PhotoUpload';
 import MicButton from '@/components/MicButton';
 import LocationPicker from '@/components/LocationPicker';
+import DocumentUpload from '@/components/DocumentUpload';
 import { toast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, X } from 'lucide-react';
 import { generateAndDownloadPdf } from '@/lib/pdfGenerator';
 
 const ProfileForm = () => {
@@ -22,6 +23,7 @@ const ProfileForm = () => {
   const navigate = useNavigate();
   const [form, setForm] = useState<FamilyProfile | null>(null);
   const [saving, setSaving] = useState(false);
+  const [uploadingGallery, setUploadingGallery] = useState(false);
 
   useEffect(() => {
     if (!currentUser) { navigate('/login'); return; }
@@ -30,8 +32,30 @@ const ProfileForm = () => {
 
   if (!form) return null;
 
-  const update = (field: keyof FamilyProfile, value: string | number) => {
+  const update = (field: keyof FamilyProfile, value: any) => {
     setForm(prev => prev ? { ...prev, [field]: value } : prev);
+  };
+
+  const handleGalleryUpload = async (files: FileList | null) => {
+    if (!files || files.length === 0 || !form) return;
+    setUploadingGallery(true);
+    try {
+      const urls: string[] = [];
+      for (const f of Array.from(files)) {
+        urls.push(await uploadGalleryPhoto(f, `gallery/${form.id}`));
+      }
+      update('gallery', [...(form.gallery || []), ...urls]);
+      toast({ title: '✅ ગેલેરી અપડેટ' });
+    } catch (e: any) {
+      toast({ title: 'ભૂલ', description: e.message, variant: 'destructive' });
+    } finally {
+      setUploadingGallery(false);
+    }
+  };
+
+  const removeGalleryItem = (i: number) => {
+    if (!form) return;
+    update('gallery', (form.gallery || []).filter((_, idx) => idx !== i));
   };
 
   const handleSave = async () => {
@@ -56,12 +80,12 @@ const ProfileForm = () => {
       const saved = await saveProfile({ ...form, members: cleanedMembers });
       setCurrentUser(saved);
       setForm(saved);
-      toast({ title: '✅ સફળતા', description: `માહિતી સાચવી! PDF બની રહ્યું છે...` });
+      toast({ title: '✅ સફળતા', description: 'માહિતી સાચવી! PDF બની રહ્યું છે...' });
       try {
         await generateAndDownloadPdf(saved);
         toast({ title: '📄 PDF તૈયાર', description: 'ડાઉનલોડ શરૂ થઈ ગયું' });
       } catch (e: any) {
-        toast({ title: 'PDF ભૂલ', description: e.message || 'PDF બનાવવામાં સમસ્યા', variant: 'destructive' });
+        toast({ title: 'PDF ભૂલ', description: e.message, variant: 'destructive' });
       }
     } catch (err: any) {
       toast({ title: 'ભૂલ', description: err.message || 'સેવ ફેઇલ', variant: 'destructive' });
@@ -87,7 +111,7 @@ const ProfileForm = () => {
         >
           <div className="flex flex-col gap-2">
             <h1 className="text-2xl font-bold">🧾 પરિવાર માહિતી</h1>
-            <p className="text-sm text-muted-foreground">અહીં તમારી માહિતી ભરો. બધું સાચવ્યા પછી PDF આપોઆપ ડાઉનલોડ થશે.</p>
+            {form.familyCode && <p className="text-sm text-primary font-semibold">Family Code: {form.familyCode}</p>}
             <p className="text-xs text-muted-foreground">ટિપ: દરેક ફીલ્ડની બાજુમાં 🎤 બટન દબાવી બોલીને ભરી શકો છો.</p>
           </div>
 
@@ -109,10 +133,7 @@ const ProfileForm = () => {
                 <MicButton title="નામ" onTranscript={(t) => update('name', t)} />
               </div>
             </div>
-            <div>
-              <Label>અટક</Label>
-              <Input value={form.surname} onChange={e => update('surname', e.target.value)} placeholder="સાયજા" />
-            </div>
+            <div><Label>અટક</Label><Input value={form.surname} onChange={e => update('surname', e.target.value)} placeholder="સાયજા" /></div>
             <div><Label>મોબાઇલ નંબર</Label><Input value={form.mobile} disabled className="bg-muted" /></div>
             <div><Label>Email</Label><Input type="email" value={form.email} onChange={e => update('email', e.target.value)} /></div>
             <div>
@@ -137,14 +158,27 @@ const ProfileForm = () => {
               </div>
             </div>
             <div>
+              <Label>કેટેગરી</Label>
+              <select value={form.categoryTag || ''} onChange={e => update('categoryTag', e.target.value)}
+                className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm">
+                <option value="">પસંદ કરો</option>
+                {CATEGORY_TAGS.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
+            <div>
               <Label>સરકારી નોકરી છે?</Label>
-              <select
-                value={form.govJob || 'No'}
-                onChange={e => update('govJob', e.target.value)}
-                className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
-              >
+              <select value={form.govJob || 'No'} onChange={e => update('govJob', e.target.value)}
+                className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm">
                 <option value="No">ના</option>
                 <option value="Yes">હા</option>
+              </select>
+            </div>
+            <div>
+              <Label>🩸 બ્લડ ગ્રુપ</Label>
+              <select value={form.bloodGroup || ''} onChange={e => update('bloodGroup', e.target.value)}
+                className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm">
+                <option value="">પસંદ કરો</option>
+                {BLOOD_GROUPS.map(b => <option key={b} value={b}>{b}</option>)}
               </select>
             </div>
             {form.govJob === 'Yes' && (
@@ -185,8 +219,36 @@ const ProfileForm = () => {
               onChange={url => update('housePhoto', url)}
               prefix={`houses/${form.id}`}
               size="lg"
-              label="🏠 ઘરનો ફોટો (Map કાર્ડમાં દેખાશે)"
+              label="🏠 ઘરનો મુખ્ય ફોટો"
             />
+          </div>
+
+          <div className="bg-secondary/50 rounded-xl p-4 border border-border space-y-3">
+            <Label>🖼️ ઘર/પરિવાર ગેલેરી (બહુવિધ ફોટા)</Label>
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={e => handleGalleryUpload(e.target.files)}
+              className="block w-full text-sm file:mr-2 file:py-2 file:px-4 file:rounded-md file:border-0 file:bg-primary file:text-primary-foreground"
+            />
+            {uploadingGallery && <Loader2 className="w-4 h-4 animate-spin text-primary" />}
+            {(form.gallery || []).length > 0 && (
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                {(form.gallery || []).map((g, i) => (
+                  <div key={i} className="relative group aspect-square">
+                    <img src={g} alt="" className="w-full h-full object-cover rounded-md" />
+                    <button
+                      type="button"
+                      onClick={() => removeGalleryItem(i)}
+                      className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="bg-secondary/50 rounded-xl p-4 border border-border space-y-3">
@@ -198,22 +260,30 @@ const ProfileForm = () => {
             />
           </div>
 
+          <div className="bg-secondary/50 rounded-xl p-4 border border-border space-y-3">
+            <Label>📦 દસ્તાવેજો (આધાર / સર્ટિફિકેટ — સુરક્ષિત)</Label>
+            <DocumentUpload familyId={form.id} />
+          </div>
+
           <div className="bg-secondary/50 rounded-xl p-4 border border-border">
             <PhotoUpload
               value={form.formPhoto}
               onChange={url => update('formPhoto', url)}
               prefix={`forms/${form.id}`}
               size="lg"
-              label="📄 ભરેલા ફોર્મનો ફોટો (વૈકલ્પિક — ફક્ત સાચવાશે)"
+              label="📄 ભરેલા ફોર્મનો ફોટો (વૈકલ્પિક)"
             />
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3">
             <Button onClick={handleSave} disabled={saving} className="flex-1 gradient-primary text-primary-foreground border-0 text-lg py-6">
-              {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : '💾 સાચવો અને PDF ડાઉનલોડ કરો'}
+              {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : '💾 સાચવો અને PDF ડાઉનલોડ'}
             </Button>
             <Button type="button" variant="outline" onClick={handleDownloadAgain} className="text-lg py-6">
               📄 PDF ફરી ડાઉનલોડ
+            </Button>
+            <Button type="button" variant="outline" onClick={() => navigate(`/id-card/${form.mobile}`)} className="text-lg py-6">
+              🪪 ID કાર્ડ
             </Button>
           </div>
         </motion.div>

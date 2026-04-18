@@ -4,12 +4,12 @@ import { motion } from 'framer-motion';
 import Footer from '@/components/Footer';
 import Header from '@/components/Header';
 
-const STEPS = [
-  { n: 1, title: 'તમારી માહિતી ભરો', desc: 'નામ, મોબાઇલ, ગામ, વ્યવસાય વગેરે' },
-  { n: 2, title: 'પરિવારના સભ્યો ઉમેરો', desc: 'દરેક સભ્યની વિગત અલગ ઉમેરો' },
-  { n: 3, title: 'ફોટા અપલોડ કરો', desc: 'મુખ્ય + દરેક સભ્યનો ફોટો' },
-  { n: 4, title: 'સેવ બટન દબાવો', desc: 'એક ક્લિકમાં બધું સુરક્ષિત' },
-  { n: 5, title: 'PDF ડાઉનલોડ થશે', desc: 'આપોઆપ તમારી ફાઇલ મળશે' },
+const FEATURES = [
+  { icon: '📞', title: 'વ્યક્તિ ડિરેક્ટરી', desc: 'સ્માર્ટ સર્ચ + વોઇસ', to: '/directory' },
+  { icon: '🏠', title: 'પરિવારો', desc: 'કાર્ડ + વિગતો', to: '/families' },
+  { icon: '🗺️', title: 'નકશો', desc: 'OpenStreetMap free', to: '/map' },
+  { icon: '🌳', title: 'ફેમિલી ટ્રી', desc: 'વંશાવળી', to: '/tree' },
+  { icon: '🎉', title: 'પ્રસંગો', desc: 'સમુદાયના કાર્યક્રમો', to: '/events' },
 ];
 
 const Index = () => (
@@ -30,11 +30,7 @@ const Index = () => (
                 સાયજા પરિવાર
               </span>
             </h1>
-            <p className="text-xl text-muted-foreground">પરિવારની સંપૂર્ણ માહિતી — એક જ જગ્યાએ, સરળ ગુજરાતીમાં</p>
-            <p className="text-base text-muted-foreground max-w-2xl mx-auto">
-              આ વેબસાઇટ તમારા પરિવારની સંપૂર્ણ માહિતી એક જગ્યાએ સંગ્રહ કરવા માટે બનાવવામાં આવી છે.
-              ફોર્મ ભરો, ફોટા અપલોડ કરો અને તમારું પોતાનું PDF મેળવો.
-            </p>
+            <p className="text-xl text-muted-foreground">સંપૂર્ણ સમુદાય પ્લેટફોર્મ — નકશો, ડિરેક્ટરી, ID કાર્ડ, પ્રસંગો</p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center pt-4 flex-wrap">
               <Link to="/login">
                 <Button size="lg" className="gradient-primary text-primary-foreground border-0 shadow-elevated text-lg px-8 py-6">
@@ -44,43 +40,37 @@ const Index = () => (
               <Link to="/directory">
                 <Button size="lg" variant="outline" className="text-lg px-8 py-6">📞 ડિરેક્ટરી</Button>
               </Link>
-              <Link to="/families">
-                <Button size="lg" variant="outline" className="text-lg px-8 py-6">🏠 પરિવારો</Button>
-              </Link>
-              <Link to="/map">
-                <Button size="lg" variant="outline" className="text-lg px-8 py-6">🗺️ નકશો</Button>
-              </Link>
             </div>
           </motion.div>
         </div>
       </section>
 
       <section className="py-16 container mx-auto px-4">
-        <h2 className="text-2xl sm:text-3xl font-bold text-center mb-10">📋 કેવી રીતે વાપરવું?</h2>
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 max-w-5xl mx-auto">
-          {STEPS.map((s, i) => (
-            <motion.div
-              key={s.n}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 + i * 0.08 }}
-              className="bg-card rounded-2xl p-5 shadow-card border border-border text-center space-y-2"
-            >
-              <div className="w-10 h-10 mx-auto rounded-full gradient-primary text-primary-foreground flex items-center justify-center text-lg font-bold">
-                {s.n}
-              </div>
-              <h3 className="font-semibold">{s.title}</h3>
-              <p className="text-muted-foreground text-xs">{s.desc}</p>
-            </motion.div>
+        <h2 className="text-2xl sm:text-3xl font-bold text-center mb-10">📋 સુવિધાઓ</h2>
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 max-w-5xl mx-auto">
+          {FEATURES.map((f, i) => (
+            <Link key={f.to} to={f.to}>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 + i * 0.08 }}
+                whileHover={{ y: -4 }}
+                className="bg-card rounded-2xl p-5 shadow-card border border-border text-center space-y-2 cursor-pointer h-full"
+              >
+                <div className="text-4xl">{f.icon}</div>
+                <h3 className="font-semibold">{f.title}</h3>
+                <p className="text-muted-foreground text-xs">{f.desc}</p>
+              </motion.div>
+            </Link>
           ))}
         </div>
 
         <div className="mt-12 max-w-3xl mx-auto bg-secondary/40 border border-border rounded-2xl p-6 text-center">
           <p className="text-base sm:text-lg font-medium">
-            🔒 તમારી માહિતી સુરક્ષિત રીતે સેવ થાય છે અને પછી તમે તેને ફરી જોઈ શકો છો.
+            🔒 તમારી માહિતી સુરક્ષિત રીતે સંગ્રહિત છે
           </p>
           <p className="text-sm text-muted-foreground mt-2">
-            🎤 દરેક ફીલ્ડમાં માઇક બટન છે — બોલીને પણ ભરી શકો છો.
+            🎤 દરેક ફીલ્ડમાં માઇક બટન છે • 🩸 બ્લડ ગ્રુપ • 🪪 ડિજિટલ ID • 🌳 ફેમિલી ટ્રી
           </p>
         </div>
       </section>
