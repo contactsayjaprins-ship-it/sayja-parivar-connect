@@ -28,6 +28,9 @@ const rowToProfile = (f: any, members: any[]): FamilyProfile => ({
   address: f.address || '',
   profilePhoto: f.profile_photo || '',
   formPhoto: f.form_photo || '',
+  housePhoto: f.house_photo || '',
+  lat: f.lat ?? null,
+  lng: f.lng ?? null,
   createdAt: f.created_at,
   updatedAt: f.updated_at,
   members: (members || [])
@@ -81,6 +84,9 @@ export const saveProfile = async (profile: FamilyProfile): Promise<FamilyProfile
       address: profile.address,
       profile_photo: profile.profilePhoto || '',
       form_photo: profile.formPhoto || '',
+      house_photo: profile.housePhoto || '',
+      lat: profile.lat ?? null,
+      lng: profile.lng ?? null,
     } as any)
     .eq('id', profile.id);
   if (updErr) throw updErr;

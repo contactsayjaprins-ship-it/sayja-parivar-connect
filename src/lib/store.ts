@@ -30,6 +30,9 @@ export interface FamilyProfile {
   address: string;
   profilePhoto?: string;
   formPhoto?: string;
+  housePhoto?: string;
+  lat?: number | null;
+  lng?: number | null;
   members: FamilyMember[];
   createdAt: string;
   updatedAt: string;
