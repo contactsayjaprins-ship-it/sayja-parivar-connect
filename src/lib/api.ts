@@ -1,19 +1,57 @@
 import { supabase } from '@/integrations/supabase/client';
-import { FamilyProfile, FamilyMember, DEFAULT_SURNAME } from './store';
+import { FamilyProfile, FamilyMember, CommunityEvent, DEFAULT_SURNAME } from './store';
 
 const BUCKET = 'family-photos';
+const GALLERY_BUCKET = 'house-gallery';
+const DOCS_BUCKET = 'family-documents';
 
-export const uploadPhoto = async (file: File, prefix: string): Promise<string> => {
+export const uploadPhoto = async (file: File, prefix: string, bucket: string = BUCKET): Promise<string> => {
   const ext = file.name.split('.').pop() || 'jpg';
   const path = `${prefix}/${crypto.randomUUID()}.${ext}`;
-  const { error } = await supabase.storage.from(BUCKET).upload(path, file, { upsert: true });
+  const { error } = await supabase.storage.from(bucket).upload(path, file, { upsert: true });
   if (error) throw error;
-  const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
+  const { data } = supabase.storage.from(bucket).getPublicUrl(path);
   return data.publicUrl;
+};
+
+export const uploadGalleryPhoto = (file: File, prefix: string) =>
+  uploadPhoto(file, prefix, GALLERY_BUCKET);
+
+export const uploadDocument = async (file: File, familyId: string, docType: string, label: string) => {
+  const ext = file.name.split('.').pop() || 'pdf';
+  const path = `${familyId}/${crypto.randomUUID()}.${ext}`;
+  const { error: upErr } = await supabase.storage.from(DOCS_BUCKET).upload(path, file, { upsert: true });
+  if (upErr) throw upErr;
+  const { error: insErr } = await supabase.from('documents').insert({
+    family_id: familyId, doc_type: docType, label, storage_path: path,
+  });
+  if (insErr) throw insErr;
+};
+
+export const listDocuments = async (familyId: string) => {
+  const { data, error } = await supabase
+    .from('documents')
+    .select('*')
+    .eq('family_id', familyId)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return data || [];
+};
+
+export const getDocumentUrl = async (path: string): Promise<string> => {
+  const { data, error } = await supabase.storage.from(DOCS_BUCKET).createSignedUrl(path, 60 * 60);
+  if (error) throw error;
+  return data.signedUrl;
+};
+
+export const deleteDocument = async (id: string, path: string) => {
+  await supabase.storage.from(DOCS_BUCKET).remove([path]);
+  await supabase.from('documents').delete().eq('id', id);
 };
 
 const rowToProfile = (f: any, members: any[]): FamilyProfile => ({
   id: f.id,
+  familyCode: f.family_code || '',
   name: f.name || '',
   surname: f.surname || DEFAULT_SURNAME,
   mobile: f.mobile,
@@ -31,6 +69,9 @@ const rowToProfile = (f: any, members: any[]): FamilyProfile => ({
   housePhoto: f.house_photo || '',
   lat: f.lat ?? null,
   lng: f.lng ?? null,
+  bloodGroup: f.blood_group || '',
+  categoryTag: f.category_tag || '',
+  gallery: Array.isArray(f.gallery) ? f.gallery : [],
   createdAt: f.created_at,
   updatedAt: f.updated_at,
   members: (members || [])
@@ -46,6 +87,7 @@ const rowToProfile = (f: any, members: any[]): FamilyProfile => ({
       mobile: m.mobile || '',
       gender: (m.gender as 'પુરુષ' | 'સ્ત્રી') || 'પુરુષ',
       photo: m.photo || '',
+      bloodGroup: m.blood_group || '',
     })),
 });
 
@@ -87,6 +129,9 @@ export const saveProfile = async (profile: FamilyProfile): Promise<FamilyProfile
       house_photo: profile.housePhoto || '',
       lat: profile.lat ?? null,
       lng: profile.lng ?? null,
+      blood_group: profile.bloodGroup || '',
+      category_tag: profile.categoryTag || '',
+      gallery: profile.gallery || [],
     } as any)
     .eq('id', profile.id);
   if (updErr) throw updErr;
@@ -104,6 +149,7 @@ export const saveProfile = async (profile: FamilyProfile): Promise<FamilyProfile
       mobile: m.mobile,
       gender: m.gender,
       photo: m.photo || '',
+      blood_group: m.bloodGroup || '',
       position: i,
     }));
     const { error: memErr } = await supabase.from('family_members').insert(rows);
@@ -168,5 +214,43 @@ export const revokeAdmin = async (mobile: string) => {
     .delete()
     .eq('mobile', mobile)
     .eq('role', 'admin');
+  if (error) throw error;
+};
+
+// Events
+export const fetchEvents = async (): Promise<CommunityEvent[]> => {
+  const { data, error } = await supabase
+    .from('events')
+    .select('*')
+    .order('event_date', { ascending: false });
+  if (error) throw error;
+  return (data || []).map((e: any) => ({
+    id: e.id,
+    title: e.title,
+    description: e.description || '',
+    eventType: e.event_type,
+    eventDate: e.event_date,
+    village: e.village || '',
+    familyId: e.family_id,
+    photo: e.photo || '',
+    createdAt: e.created_at,
+  }));
+};
+
+export const createEvent = async (e: Omit<CommunityEvent, 'id' | 'createdAt'>) => {
+  const { error } = await supabase.from('events').insert({
+    title: e.title,
+    description: e.description,
+    event_type: e.eventType,
+    event_date: e.eventDate,
+    village: e.village,
+    family_id: e.familyId || null,
+    photo: e.photo || '',
+  });
+  if (error) throw error;
+};
+
+export const deleteEvent = async (id: string) => {
+  const { error } = await supabase.from('events').delete().eq('id', id);
   if (error) throw error;
 };
