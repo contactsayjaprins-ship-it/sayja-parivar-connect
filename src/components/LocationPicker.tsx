@@ -1,7 +1,21 @@
 import { useEffect, useRef } from 'react';
-import { useGoogleMaps } from '@/hooks/useGoogleMaps';
-import { Loader2, MapPin } from 'lucide-react';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import { Button } from '@/components/ui/button';
+import { MapPin } from 'lucide-react';
+
+// Fix default marker icons (Leaflet bug with bundlers)
+import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
+import markerIcon from 'leaflet/dist/images/marker-icon.png';
+import markerShadow from 'leaflet/dist/images/marker-shadow.png';
+
+// @ts-expect-error reset internal default
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: markerIcon2x,
+  iconUrl: markerIcon,
+  shadowUrl: markerShadow,
+});
 
 interface Props {
   lat?: number | null;
@@ -9,49 +23,40 @@ interface Props {
   onChange: (lat: number, lng: number) => void;
 }
 
-const DEFAULT_CENTER = { lat: 22.3072, lng: 73.1812 }; // Vadodara, Gujarat
+const DEFAULT_CENTER: [number, number] = [22.3072, 73.1812];
 
 const LocationPicker = ({ lat, lng, onChange }: Props) => {
-  const { ready, error } = useGoogleMaps();
   const divRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<any>(null);
-  const markerRef = useRef<any>(null);
+  const mapRef = useRef<L.Map | null>(null);
+  const markerRef = useRef<L.Marker | null>(null);
 
   useEffect(() => {
-    if (!ready || !divRef.current) return;
-    const g = (window as any).google;
-    const center = lat && lng ? { lat, lng } : DEFAULT_CENTER;
-    mapRef.current = new g.maps.Map(divRef.current, {
-      center,
-      zoom: lat && lng ? 15 : 11,
-      mapTypeControl: false,
-      streetViewControl: false,
-      fullscreenControl: false,
+    if (!divRef.current || mapRef.current) return;
+    const center: [number, number] = lat != null && lng != null ? [lat, lng] : DEFAULT_CENTER;
+    const map = L.map(divRef.current).setView(center, lat && lng ? 15 : 11);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap',
+      maxZoom: 19,
+    }).addTo(map);
+    const marker = L.marker(center, { draggable: true }).addTo(map);
+    marker.on('dragend', () => {
+      const p = marker.getLatLng();
+      onChange(p.lat, p.lng);
     });
-    markerRef.current = new g.maps.Marker({
-      position: center,
-      map: mapRef.current,
-      draggable: true,
+    map.on('click', (e: L.LeafletMouseEvent) => {
+      marker.setLatLng(e.latlng);
+      onChange(e.latlng.lat, e.latlng.lng);
     });
-    if (!(lat && lng)) {
-      // Don't fire onChange until user interacts
-    }
-    markerRef.current.addListener('dragend', () => {
-      const p = markerRef.current.getPosition();
-      onChange(p.lat(), p.lng());
-    });
-    mapRef.current.addListener('click', (e: any) => {
-      markerRef.current.setPosition(e.latLng);
-      onChange(e.latLng.lat(), e.latLng.lng());
-    });
+    mapRef.current = map;
+    markerRef.current = marker;
+    return () => { map.remove(); mapRef.current = null; markerRef.current = null; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ready]);
+  }, []);
 
   useEffect(() => {
     if (!mapRef.current || !markerRef.current || lat == null || lng == null) return;
-    const pos = { lat, lng };
-    markerRef.current.setPosition(pos);
-    mapRef.current.panTo(pos);
+    markerRef.current.setLatLng([lat, lng]);
+    mapRef.current.panTo([lat, lng]);
   }, [lat, lng]);
 
   const useMyLocation = () => {
@@ -63,14 +68,6 @@ const LocationPicker = ({ lat, lng, onChange }: Props) => {
     );
   };
 
-  if (error) {
-    return (
-      <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
-        નકશો લોડ થઈ શક્યો નહીં: {error}
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
@@ -79,14 +76,7 @@ const LocationPicker = ({ lat, lng, onChange }: Props) => {
           <MapPin className="w-4 h-4 mr-1" /> મારું લોકેશન
         </Button>
       </div>
-      <div className="relative w-full h-64 rounded-xl overflow-hidden border border-border">
-        {!ready && (
-          <div className="absolute inset-0 flex items-center justify-center bg-muted">
-            <Loader2 className="w-6 h-6 animate-spin text-primary" />
-          </div>
-        )}
-        <div ref={divRef} className="w-full h-full" />
-      </div>
+      <div ref={divRef} className="w-full h-64 rounded-xl overflow-hidden border border-border z-0" />
       {lat != null && lng != null && (
         <p className="text-xs text-muted-foreground">
           Lat: {lat.toFixed(5)} • Lng: {lng.toFixed(5)}

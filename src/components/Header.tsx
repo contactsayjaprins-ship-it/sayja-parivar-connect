@@ -16,36 +16,24 @@ const Header = () => {
     navigate('/');
   };
 
+  const close = () => setOpen(false);
+
   const navLinks = (
     <>
-      <Link to="/directory" onClick={() => setOpen(false)}>
-        <Button variant="ghost" size="sm">📞 ડિરેક્ટરી</Button>
-      </Link>
-      <Link to="/families" onClick={() => setOpen(false)}>
-        <Button variant="ghost" size="sm">🏠 પરિવારો</Button>
-      </Link>
-      <Link to="/map" onClick={() => setOpen(false)}>
-        <Button variant="ghost" size="sm">🗺️ નકશો</Button>
-      </Link>
+      <Link to="/directory" onClick={close}><Button variant="ghost" size="sm">📞 ડિરેક્ટરી</Button></Link>
+      <Link to="/families" onClick={close}><Button variant="ghost" size="sm">🏠 પરિવારો</Button></Link>
+      <Link to="/map" onClick={close}><Button variant="ghost" size="sm">🗺️ નકશો</Button></Link>
+      <Link to="/tree" onClick={close}><Button variant="ghost" size="sm">🌳 ટ્રી</Button></Link>
+      <Link to="/events" onClick={close}><Button variant="ghost" size="sm">🎉 પ્રસંગો</Button></Link>
       {currentUser ? (
         <>
-          <Link to="/profile" onClick={() => setOpen(false)}>
-            <Button variant="ghost" size="sm">પ્રોફાઇલ</Button>
-          </Link>
-          {isAdmin && (
-            <Link to="/admin" onClick={() => setOpen(false)}>
-              <Button variant="ghost" size="sm">👑 એડમિન</Button>
-            </Link>
-          )}
-          <Button variant="outline" size="sm" onClick={handleLogout}>
-            લોગઆઉટ
-          </Button>
+          <Link to="/profile" onClick={close}><Button variant="ghost" size="sm">પ્રોફાઇલ</Button></Link>
+          {isAdmin && <Link to="/admin" onClick={close}><Button variant="ghost" size="sm">👑 એડમિન</Button></Link>}
+          <Button variant="outline" size="sm" onClick={handleLogout}>લોગઆઉટ</Button>
         </>
       ) : (
-        <Link to="/login" onClick={() => setOpen(false)}>
-          <Button size="sm" className="gradient-primary text-primary-foreground border-0">
-            લોગિન
-          </Button>
+        <Link to="/login" onClick={close}>
+          <Button size="sm" className="gradient-primary text-primary-foreground border-0">લોગિન</Button>
         </Link>
       )}
     </>
@@ -63,13 +51,13 @@ const Header = () => {
             સાયજા પરિવાર
           </span>
         </Link>
-        <nav className="hidden md:flex items-center gap-2">{navLinks}</nav>
-        <button className="md:hidden p-2" onClick={() => setOpen(o => !o)} aria-label="Menu">
+        <nav className="hidden lg:flex items-center gap-1">{navLinks}</nav>
+        <button className="lg:hidden p-2" onClick={() => setOpen(o => !o)} aria-label="Menu">
           {open ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
         </button>
       </div>
       {open && (
-        <div className="md:hidden border-t border-border bg-card/95 backdrop-blur-md">
+        <div className="lg:hidden border-t border-border bg-card/95 backdrop-blur-md">
           <nav className="container mx-auto px-4 py-3 flex flex-col gap-2 items-stretch">
             {navLinks}
           </nav>

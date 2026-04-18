@@ -14,14 +14,97 @@ export type Database = {
   }
   public: {
     Tables: {
+      documents: {
+        Row: {
+          created_at: string
+          doc_type: string
+          family_id: string
+          id: string
+          label: string | null
+          storage_path: string
+        }
+        Insert: {
+          created_at?: string
+          doc_type?: string
+          family_id: string
+          id?: string
+          label?: string | null
+          storage_path: string
+        }
+        Update: {
+          created_at?: string
+          doc_type?: string
+          family_id?: string
+          id?: string
+          label?: string | null
+          storage_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documents_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      events: {
+        Row: {
+          created_at: string
+          description: string | null
+          event_date: string
+          event_type: string
+          family_id: string | null
+          id: string
+          photo: string | null
+          title: string
+          village: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          event_date: string
+          event_type?: string
+          family_id?: string | null
+          id?: string
+          photo?: string | null
+          title: string
+          village?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          event_date?: string
+          event_type?: string
+          family_id?: string | null
+          id?: string
+          photo?: string | null
+          title?: string
+          village?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "events_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       families: {
         Row: {
           address: string | null
+          blood_group: string | null
+          category_tag: string | null
           created_at: string
           current_village: string | null
           education: string | null
           email: string | null
+          family_code: string | null
           form_photo: string | null
+          gallery: Json | null
           gov_job: string
           gov_job_place: string
           house_photo: string
@@ -39,11 +122,15 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          blood_group?: string | null
+          category_tag?: string | null
           created_at?: string
           current_village?: string | null
           education?: string | null
           email?: string | null
+          family_code?: string | null
           form_photo?: string | null
+          gallery?: Json | null
           gov_job?: string
           gov_job_place?: string
           house_photo?: string
@@ -61,11 +148,15 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          blood_group?: string | null
+          category_tag?: string | null
           created_at?: string
           current_village?: string | null
           education?: string | null
           email?: string | null
+          family_code?: string | null
           form_photo?: string | null
+          gallery?: Json | null
           gov_job?: string
           gov_job_place?: string
           house_photo?: string
@@ -85,6 +176,7 @@ export type Database = {
       }
       family_members: {
         Row: {
+          blood_group: string | null
           created_at: string
           education: string | null
           family_id: string
@@ -100,6 +192,7 @@ export type Database = {
           relation: string | null
         }
         Insert: {
+          blood_group?: string | null
           created_at?: string
           education?: string | null
           family_id: string
@@ -115,6 +208,7 @@ export type Database = {
           relation?: string | null
         }
         Update: {
+          blood_group?: string | null
           created_at?: string
           education?: string | null
           family_id?: string
@@ -132,6 +226,35 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "family_members_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      favorites: {
+        Row: {
+          created_at: string
+          family_id: string
+          id: string
+          owner_mobile: string
+        }
+        Insert: {
+          created_at?: string
+          family_id: string
+          id?: string
+          owner_mobile: string
+        }
+        Update: {
+          created_at?: string
+          family_id?: string
+          id?: string
+          owner_mobile?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "favorites_family_id_fkey"
             columns: ["family_id"]
             isOneToOne: false
             referencedRelation: "families"
