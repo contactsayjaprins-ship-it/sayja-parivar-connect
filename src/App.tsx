@@ -10,6 +10,9 @@ import AdminPanel from "./pages/AdminPanel";
 import Directory from "./pages/Directory";
 import FamilyDirectory from "./pages/FamilyDirectory";
 import MapView from "./pages/MapView";
+import FamilyTree from "./pages/FamilyTree";
+import IdCard from "./pages/IdCard";
+import Events from "./pages/Events";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -27,6 +30,9 @@ const App = () => (
           <Route path="/directory" element={<Directory />} />
           <Route path="/families" element={<FamilyDirectory />} />
           <Route path="/map" element={<MapView />} />
+          <Route path="/tree" element={<FamilyTree />} />
+          <Route path="/id-card/:mobile" element={<IdCard />} />
+          <Route path="/events" element={<Events />} />
           <Route path="/admin" element={<AdminPanel />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
