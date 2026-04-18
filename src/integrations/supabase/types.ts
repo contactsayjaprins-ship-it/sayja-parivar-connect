@@ -24,7 +24,10 @@ export type Database = {
           form_photo: string | null
           gov_job: string
           gov_job_place: string
+          house_photo: string
           id: string
+          lat: number | null
+          lng: number | null
           mobile: string
           name: string
           native_village: string | null
@@ -43,7 +46,10 @@ export type Database = {
           form_photo?: string | null
           gov_job?: string
           gov_job_place?: string
+          house_photo?: string
           id?: string
+          lat?: number | null
+          lng?: number | null
           mobile: string
           name?: string
           native_village?: string | null
@@ -62,7 +68,10 @@ export type Database = {
           form_photo?: string | null
           gov_job?: string
           gov_job_place?: string
+          house_photo?: string
           id?: string
+          lat?: number | null
+          lng?: number | null
           mobile?: string
           name?: string
           native_village?: string | null

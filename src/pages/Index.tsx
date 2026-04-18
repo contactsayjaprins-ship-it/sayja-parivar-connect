@@ -35,11 +35,20 @@ const Index = () => (
               આ વેબસાઇટ તમારા પરિવારની સંપૂર્ણ માહિતી એક જગ્યાએ સંગ્રહ કરવા માટે બનાવવામાં આવી છે.
               ફોર્મ ભરો, ફોટા અપલોડ કરો અને તમારું પોતાનું PDF મેળવો.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
+            <div className="flex flex-col sm:flex-row gap-3 justify-center pt-4 flex-wrap">
               <Link to="/login">
                 <Button size="lg" className="gradient-primary text-primary-foreground border-0 shadow-elevated text-lg px-8 py-6">
                   ➕ નવી માહિતી ઉમેરો
                 </Button>
+              </Link>
+              <Link to="/directory">
+                <Button size="lg" variant="outline" className="text-lg px-8 py-6">📞 ડિરેક્ટરી</Button>
+              </Link>
+              <Link to="/families">
+                <Button size="lg" variant="outline" className="text-lg px-8 py-6">🏠 પરિવારો</Button>
+              </Link>
+              <Link to="/map">
+                <Button size="lg" variant="outline" className="text-lg px-8 py-6">🗺️ નકશો</Button>
               </Link>
             </div>
           </motion.div>
