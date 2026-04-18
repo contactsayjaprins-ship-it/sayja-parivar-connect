@@ -12,6 +12,7 @@ import Footer from '@/components/Footer';
 import FamilyMemberForm from '@/components/FamilyMemberForm';
 import PhotoUpload from '@/components/PhotoUpload';
 import MicButton from '@/components/MicButton';
+import LocationPicker from '@/components/LocationPicker';
 import { toast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import { generateAndDownloadPdf } from '@/lib/pdfGenerator';
@@ -177,6 +178,25 @@ const ProfileForm = () => {
             members={form.members}
             onChange={members => setForm(prev => prev ? { ...prev, members } : prev)}
           />
+
+          <div className="bg-secondary/50 rounded-xl p-4 border border-border space-y-4">
+            <PhotoUpload
+              value={form.housePhoto}
+              onChange={url => update('housePhoto', url)}
+              prefix={`houses/${form.id}`}
+              size="lg"
+              label="🏠 ઘરનો ફોટો (Map કાર્ડમાં દેખાશે)"
+            />
+          </div>
+
+          <div className="bg-secondary/50 rounded-xl p-4 border border-border space-y-3">
+            <Label>📍 ઘરનું લોકેશન (નકશા પર પિન મૂકો)</Label>
+            <LocationPicker
+              lat={form.lat ?? null}
+              lng={form.lng ?? null}
+              onChange={(lat, lng) => setForm(prev => prev ? { ...prev, lat, lng } : prev)}
+            />
+          </div>
 
           <div className="bg-secondary/50 rounded-xl p-4 border border-border">
             <PhotoUpload
